@@ -10,7 +10,7 @@ import settings as cfg
 from config import TEMP_DIR, TEMP_LIMIT_MB, INACTIVITY_TIMEOUT, MAX_TURNS, NO_FINDING_STOP
 from events import bus
 from llm import stream_chat, build_tool_result_anthropic, build_tool_result_openai
-from prompt import build_system_prompt, build_user_prompt
+from prompt import build_system_prompt, build_user_prompt, get_next_lens, get_lenses_for_phase, get_all_lenses_ordered
 from tools import dispatch_tool
 
 _semaphore: asyncio.Semaphore | None = None
@@ -140,7 +140,10 @@ async def _ai_loop(sid: int, messages: list[dict], system_prompt: str, start_tur
     last_activity = time.time()
     session_cwd = str(_session_temp(sid))
     current_phase = "threat_model"
+    current_lens_id = ""
     no_finding_streak = 0
+    lens_turns = 0
+    LENS_MAX_TURNS = 6
 
     try:
         while turns < MAX_TURNS:
@@ -290,7 +293,37 @@ async def _ai_loop(sid: int, messages: list[dict], system_prompt: str, start_tur
             if not tool_calls and not resp.get("tool_calls"):
                 messages.append({"role": "assistant", "content": full_text})
 
-            messages.append({"role": "user", "content": "继续。如果当前阶段完成，进入下一阶段。保持输出状态标记。"})
+            lens_turns += 1
+            next_msg = "继续。如果当前阶段完成，进入下一阶段。保持输出状态标记。"
+
+            if lens_turns >= LENS_MAX_TURNS or no_finding_streak >= 3:
+                next_lens = get_next_lens(current_lens_id, current_phase)
+                if next_lens:
+                    current_lens_id = next_lens["id"]
+                    lens_turns = 0
+                    next_msg = next_lens["prompt"]
+                    await bus.publish(sid, "stream", {
+                        "text": f"\n🔄 切换视角: {next_lens['name']}\n"
+                    })
+                else:
+                    phases = ["threat_model", "strike", "bypass", "deep_verify"]
+                    idx = phases.index(current_phase) if current_phase in phases else -1
+                    if idx + 1 < len(phases):
+                        new_phase = phases[idx + 1]
+                        new_lenses = get_lenses_for_phase(new_phase)
+                        if new_lenses:
+                            current_phase = new_phase
+                            current_lens_id = new_lenses[0]["id"]
+                            lens_turns = 0
+                            no_finding_streak = 0
+                            next_msg = new_lenses[0]["prompt"]
+                            await db.update_session(sid, phase=current_phase)
+                            await bus.publish(sid, "stream", {
+                                "text": f"\n⏭️ 进入阶段: {current_phase} / 视角: {new_lenses[0]['name']}\n"
+                            })
+                            await bus.publish(sid, "phase", {"phase": current_phase})
+
+            messages.append({"role": "user", "content": next_msg})
             await db.add_log(sid, "user", messages[-1]["content"], "")
 
         else:
