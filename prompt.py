@@ -32,9 +32,17 @@ def build_system_prompt(target: str, cookie: str = "", cookie_b: str = "", scope
     parts.extend([
         "",
         "# 环境配置",
-        f"Burp代理: {burp_proxy}",
-        "所有HTTP请求必须走Burp代理",
-        f"使用 curl.exe -sk -x {burp_proxy} 发送请求",
+    ])
+
+    if burp_proxy:
+        parts.extend([
+            f"Burp代理: {burp_proxy}",
+            f"使用 curl.exe -sk -x {burp_proxy} 发送请求",
+        ])
+    else:
+        parts.append("使用 curl.exe -sk 发送请求（无代理模式）")
+
+    parts.extend([
         "",
         "# 工具说明",
         "你可以使用以下工具来执行测试：",
@@ -44,7 +52,14 @@ def build_system_prompt(target: str, cookie: str = "", cookie_b: str = "", scope
         "- list_directory: 列出目录文件",
         "- blackboard_write: 写入黑板（攻击面/发现/假设/利用原语/失败记录）",
         "- blackboard_read: 读取黑板内容",
-        "所有HTTP请求必须通过Burp代理发送。",
+    ])
+
+    if burp_proxy:
+        parts.append("所有HTTP请求必须通过Burp代理发送。")
+    else:
+        parts.append("当前为无代理模式，直接发送HTTP请求。")
+
+    parts.extend([
         "",
         "# 黑板协议（必须遵守）",
         "黑板是你的持久化记忆，用于避免重复探测和记录进度：",
@@ -82,10 +97,30 @@ def build_system_prompt(target: str, cookie: str = "", cookie_b: str = "", scope
     return "\n".join(parts)
 
 
-def build_user_prompt(target: str) -> str:
+def build_user_prompt(target: str, has_cookie: bool = False) -> str:
+    if has_cookie:
+        return (
+            f"开始对 {target} 进行渗透测试。\n"
+            "按照Phase 1（威胁建模）开始：先审计JS、理解业务、识别技术栈、建立攻击面地图。\n"
+            "完成后自动进入Phase 2（精准打击）。\n"
+            "使用 execute_command 工具来执行所有测试命令。"
+        )
     return (
-        f"开始对 {target} 进行渗透测试。\n"
-        "按照Phase 1（威胁建模）开始：先审计JS、理解业务、识别技术栈、建立攻击面地图。\n"
-        "完成后自动进入Phase 2（精准打击）。\n"
-        "使用 execute_command 工具来执行所有测试命令。"
+        f"开始对 {target} 进行渗透测试（无认证凭证模式）。\n"
+        "\n"
+        "Phase 1（威胁建模）重点：\n"
+        "1. curl 获取首页，分析响应头（Server/X-Powered-By/Set-Cookie等）\n"
+        "2. 提取页面中所有JS文件URL，逐个下载分析\n"
+        "3. 从JS中提取：API接口路径、硬编码凭证/密钥、敏感配置、内部域名\n"
+        "4. 探测常见敏感路径（/robots.txt /sitemap.xml /.env /swagger /api-docs /actuator等）\n"
+        "5. 将发现的所有接口写入 blackboard attack_surfaces\n"
+        "\n"
+        "Phase 2（精准打击）重点：\n"
+        "1. 逐个接口测试未授权访问\n"
+        "2. JS发现的硬编码凭证尝试利用\n"
+        "3. 参数注入/路径遍历/SSRF等无需认证的漏洞\n"
+        "4. 信息泄露（错误页面、调试信息、版本暴露）\n"
+        "\n"
+        "使用 execute_command 工具来执行所有测试命令。\n"
+        "每发现一个接口/攻击面立即 blackboard_write 记录。"
     )
