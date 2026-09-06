@@ -4,57 +4,44 @@
 
 ## 特性
 
-- **AI工具执行** — AI可自主执行curl/脚本/文件操作，不只是对话（Anthropic Tool Use API）
-- **五阶段流程可视化** — 实时查看测试进展和当前阶段
+- **黑板架构** — 五分区持久化记忆（攻击面/已验证/待验证假设/利用原语/失败记录），避免重复探测
+- **模型分级** — 按阶段自动切换模型（强模型做建模和验证，快模型做打击），控制成本
+- **结果验证铁律** — FINDING 必须有真实 curl 请求证据，模型自述不算数
+- **连续无发现自动收敛** — 连续 N 轮无新发现自动停止，不烧 Token
+- **首次启动引导** — 浏览器内填 API Key 即可使用，无需编辑配置文件
+- **AI工具执行** — AI 自主执行 curl/脚本/文件操作（Anthropic Tool Use API）
 - **多模型支持** — Anthropic Claude / OpenAI / DeepSeek / Qwen / GLM 等 OpenAI 兼容 API
 - **实时流式输出** — WebSocket 推送 AI 测试过程和工具执行结果
-- **漏洞面板** — 自动解析和展示发现的漏洞
-- **报告导出** — 一键下载 Markdown 格式渗透测试报告
-- **Skill 在线编辑** — Web 界面直接修改核心技能文件（SKILL.md）
-- **安全沙箱** — 命令执行内置危险操作拦截（rm -rf /、反弹shell等）
-- **消息滑窗** — 长会话自动摘要压缩，防止上下文溢出
-- **API重试** — 网络抖动自动重试，指数退避
+- **安全沙箱** — 命令执行内置危险操作拦截，文件写入限制在会话目录
 - **并发会话** — 同时对多个目标进行测试
-- **一键部署** — Windows 双击 bat / Linux 执行 sh
+- **Docker 部署** — 一条命令启动
 
 ## 快速开始
 
-### 前置要求
-
-- Python 3.10+
-- API Key（Anthropic / OpenAI 兼容）
-- 可选：Burp Suite（流量代理）
-
-### Windows
-
-```bat
-# 1. 进入项目目录
-cd vuln-hunter
-
-# 2. 复制配置文件并填入 API Key
-copy .env.example .env
-notepad .env
-
-# 3. 一键启动
-start.bat
-```
-
-### Linux / Ubuntu
+### 方式一：克隆运行
 
 ```bash
-# 1. 进入项目目录
-cd vuln-hunter
-
-# 2. 复制配置文件并填入 API Key
-cp .env.example .env
-nano .env
-
-# 3. 一键启动
-chmod +x start.sh
-./start.sh
+git clone https://github.com/1nceSec/vulnhunter.git
+cd vulnhunter
+pip install -r requirements.txt
+python app.py
 ```
 
-启动后访问 **http://127.0.0.1:8899**
+浏览器打开 **http://127.0.0.1:8899**，首次打开会引导配置 API Key。
+
+### 方式二：Docker
+
+```bash
+docker run -d -p 8899:8899 -v vulnhunter-data:/app/data ox1dq/vulnhunter
+```
+
+### 方式三：Windows 双击启动
+
+```
+1. 下载并解压
+2. 双击 start.bat
+3. 浏览器打开 http://127.0.0.1:8899
+```
 
 ## 配置
 
@@ -62,13 +49,16 @@ chmod +x start.sh
 
 | 变量 | 说明 | 默认值 |
 |------|------|--------|
-| `ANTHROPIC_API_KEY` | API Key（必填） | - |
-| `MODEL` | 模型名称 | claude-sonnet-4-20250514 |
+| `ANTHROPIC_API_KEY` | API Key（首次启动在浏览器中配置） | - |
+| `MODEL` | 默认模型 | claude-sonnet-4-20250514 |
+| `MODEL_STRONG` | 强模型（建模/验证阶段） | claude-opus-4-20250514 |
+| `MODEL_FAST` | 快模型（打击阶段） | claude-haiku-4-5-20251001 |
 | `MAX_TOKENS` | 最大输出 token | 16384 |
 | `BURP_PROXY` | Burp 代理地址 | http://127.0.0.1:8080 |
 | `MAX_CONCURRENT` | 最大并发会话数 | 3 |
 | `INACTIVITY_TIMEOUT` | 无活动超时（秒） | 600 |
 | `MAX_TURNS` | 最大对话轮次 | 200 |
+| `NO_FINDING_STOP` | 连续无发现停止轮次 | 8 |
 | `HOST` | 监听地址 | 127.0.0.1 |
 | `PORT` | 监听端口 | 8899 |
 
@@ -109,33 +99,32 @@ chmod +x start.sh
 ```
 vuln-hunter/
 ├── app.py              # FastAPI 主应用（REST API + WebSocket）
-├── engine.py           # AI 工作引擎（会话循环 + 工具调用）
+├── engine.py           # AI 工作引擎（会话循环 + 工具调用 + 模型分级）
 ├── llm.py              # LLM 抽象层（Anthropic Tool Use + OpenAI 兼容）
-├── tools.py            # 工具沙箱（命令执行/文件读写 + 安全拦截）
-├── db.py               # SQLite 数据库操作
+├── tools.py            # 工具沙箱（命令执行/文件读写/黑板读写 + 安全拦截）
+├── db.py               # SQLite 数据库（含黑板五分区表）
 ├── events.py           # WebSocket 事件总线
-├── prompt.py           # 提示词构建器
+├── prompt.py           # 提示词构建器（含黑板协议 + 验证铁律）
 ├── settings.py         # 运行时设置管理
 ├── config.py           # 环境变量配置
+├── Dockerfile          # Docker 部署
 ├── requirements.txt    # Python 依赖
 ├── .env.example        # 配置模板
 ├── start.bat           # Windows 一键启动
 ├── start.sh            # Linux 一键启动
 ├── templates/
-│   └── index.html      # 前端仪表盘
+│   ├── index.html      # 前端仪表盘
+│   └── setup.html      # 首次启动引导页
 ├── static/             # 静态资源
-└── data/
-    ├── vulnhunter.db   # SQLite 数据库（自动创建）
-    ├── settings.json   # 运行时设置（自动创建）
-    ├── reports/        # 漏洞报告存放
-    └── temp/           # 会话临时文件
+└── data/               # 运行时数据（自动创建）
 ```
 
 ## API
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/` | 前端仪表盘 |
+| GET | `/` | 前端仪表盘（首次进入为引导页） |
+| POST | `/api/setup` | 首次配置 API Key |
 | POST | `/api/sessions` | 创建测试会话 |
 | GET | `/api/sessions` | 列出所有会话 |
 | GET | `/api/sessions/{id}` | 获取会话详情 |
@@ -143,6 +132,8 @@ vuln-hunter/
 | DELETE | `/api/sessions/{id}` | 删除会话 |
 | POST | `/api/sessions/{id}/input` | 发送用户消息 |
 | GET | `/api/sessions/{id}/findings` | 获取漏洞列表 |
+| GET | `/api/sessions/{id}/blackboard` | 获取黑板内容 |
+| GET | `/api/sessions/{id}/blackboard/summary` | 黑板五分区统计 |
 | GET | `/api/sessions/{id}/logs` | 获取对话日志 |
 | GET | `/api/settings` | 获取设置 |
 | PUT | `/api/settings` | 更新设置 |
