@@ -27,7 +27,7 @@ pip install -r requirements.txt
 python app.py
 ```
 
-浏览器打开 **http://127.0.0.1:8899**，首次打开会引导配置 API Key。
+浏览器打开 *http://127.0.0.1:8899*，首次打开会引导配置 API Key。
 
 ### 方式二：Docker
 
