@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+.env
+.env.bak
+data/vulnhunter.db
+data/settings.json
+data/temp/
+data/reports/

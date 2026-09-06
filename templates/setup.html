@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VulnHunter — 初始配置</title>
+<style>
+:root {
+  --bg: #0d1117; --bg2: #161b22; --bg3: #21262d;
+  --fg: #c9d1d9; --fg2: #8b949e; --border: #30363d;
+  --accent: #58a6ff; --green: #3fb950; --red: #f85149;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Cascadia Code','Consolas',monospace; background:var(--bg); color:var(--fg); min-height:100vh; display:flex; align-items:center; justify-content:center; }
+.setup-card { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:40px; width:520px; max-width:90vw; }
+.setup-card h1 { font-size:24px; color:var(--accent); margin-bottom:8px; }
+.setup-card .subtitle { color:var(--fg2); font-size:13px; margin-bottom:32px; }
+.form-group { margin-bottom:20px; }
+.form-group label { display:block; font-size:13px; color:var(--fg2); margin-bottom:6px; }
+.form-group .required { color:var(--red); }
+.form-group input, .form-group select { width:100%; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--fg); font-size:14px; font-family:inherit; outline:none; transition:border-color .15s; }
+.form-group input:focus, .form-group select:focus { border-color:var(--accent); }
+.form-group .hint { font-size:11px; color:var(--fg2); margin-top:4px; }
+.toggle-btn { background:none; border:none; color:var(--accent); cursor:pointer; font-size:12px; margin-top:12px; padding:0; }
+.advanced { display:none; margin-top:16px; padding-top:16px; border-top:1px solid var(--border); }
+.advanced.show { display:block; }
+.btn-submit { width:100%; padding:12px; background:var(--accent); color:#fff; border:none; border-radius:6px; font-size:15px; font-family:inherit; cursor:pointer; transition:background .15s; margin-top:24px; }
+.btn-submit:hover { background:#79c0ff; }
+.btn-submit:disabled { opacity:.5; cursor:not-allowed; }
+.error { color:var(--red); font-size:13px; margin-top:12px; display:none; }
+.success { color:var(--green); font-size:13px; margin-top:12px; display:none; }
+</style>
+</head>
+<body>
+<div class="setup-card">
+  <h1>VulnHunter</h1>
+  <p class="subtitle">AI 漏洞挖掘系统 — 首次启动配置</p>
+
+  <div class="form-group">
+    <label>API Key <span class="required">*</span></label>
+    <input type="password" id="apiKey" placeholder="sk-ant-xxxxx 或第三方 Key">
+    <div class="hint">支持 Anthropic 官方 / OpenAI兼容 / 中转站</div>
+  </div>
+
+  <div class="form-group">
+    <label>Provider</label>
+    <select id="provider">
+      <option value="anthropic">Anthropic</option>
+      <option value="openai">OpenAI兼容 / 中转站</option>
+    </select>
+  </div>
+
+  <button class="toggle-btn" onclick="document.querySelector('.advanced').classList.toggle('show')">
+    ▸ 高级设置
+  </button>
+
+  <div class="advanced">
+    <div class="form-group">
+      <label>Base URL（中转站地址，官方留空）</label>
+      <input type="text" id="baseUrl" placeholder="https://your-proxy.com/v1">
+    </div>
+    <div class="form-group">
+      <label>默认模型</label>
+      <input type="text" id="model" placeholder="claude-sonnet-4-20250514">
+    </div>
+    <div class="form-group">
+      <label>Burp 代理地址</label>
+      <input type="text" id="burpProxy" placeholder="http://127.0.0.1:8080">
+    </div>
+  </div>
+
+  <button class="btn-submit" id="submitBtn" onclick="doSetup()">开始使用</button>
+  <div class="error" id="errMsg"></div>
+  <div class="success" id="okMsg"></div>
+</div>
+
+<script>
+async function doSetup() {
+  const btn = document.getElementById('submitBtn');
+  const errEl = document.getElementById('errMsg');
+  const okEl = document.getElementById('okMsg');
+  errEl.style.display = 'none';
+  okEl.style.display = 'none';
+
+  const apiKey = document.getElementById('apiKey').value.trim();
+  if (!apiKey) { errEl.textContent = '请输入 API Key'; errEl.style.display = 'block'; return; }
+
+  const body = { api_key: apiKey, provider: document.getElementById('provider').value };
+  const baseUrl = document.getElementById('baseUrl').value.trim();
+  const model = document.getElementById('model').value.trim();
+  const burpProxy = document.getElementById('burpProxy').value.trim();
+  if (baseUrl) body.base_url = baseUrl;
+  if (model) body.model = model;
+  if (burpProxy) body.burp_proxy = burpProxy;
+
+  btn.disabled = true;
+  btn.textContent = '配置中...';
+
+  try {
+    const resp = await fetch('/api/setup', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || '配置失败');
+    okEl.textContent = '配置成功，正在跳转...';
+    okEl.style.display = 'block';
+    setTimeout(() => { window.location.href = '/'; }, 1000);
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = '开始使用';
+  }
+}
+</script>
+</body>
+</html>
