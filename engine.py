@@ -82,6 +82,33 @@ def _parse_markers(text: str) -> dict:
     return result
 
 
+def _extract_poc_from_logs(tool_logs: list[dict]) -> tuple[str, str]:
+    poc_parts = []
+    desc_parts = []
+    for log in reversed(tool_logs[-10:]):
+        try:
+            data = json.loads(log.get("content", "{}"))
+        except (json.JSONDecodeError, TypeError):
+            continue
+        name = data.get("name", "")
+        if name == "execute_command":
+            cmd = data.get("input", {}).get("command", "")
+            output = data.get("output", "")
+            if "curl" in cmd:
+                poc_parts.append(cmd)
+                try:
+                    out_data = json.loads(output)
+                    if out_data.get("success"):
+                        stdout = out_data.get("stdout", "")
+                        if stdout:
+                            desc_parts.append(stdout[:500])
+                except (json.JSONDecodeError, TypeError):
+                    pass
+    poc = "\n".join(poc_parts[:3]) if poc_parts else ""
+    desc = "\n---\n".join(desc_parts[:2]) if desc_parts else ""
+    return poc, desc
+
+
 def _trim_messages(messages: list[dict]) -> list[dict]:
     if len(messages) <= MAX_WINDOW:
         return messages
@@ -207,7 +234,10 @@ async def _ai_loop(sid: int, messages: list[dict], system_prompt: str, start_tur
                     if tool_name == "execute_command" and "curl" in tool_input.get("command", ""):
                         has_real_request = True
 
-                    output = await dispatch_tool(tool_name, tool_input, session_cwd, session_id=sid)
+                    try:
+                        output = await dispatch_tool(tool_name, tool_input, session_cwd, session_id=sid)
+                    except Exception as tool_err:
+                        output = json.dumps({"success": False, "error": f"工具执行异常: {tool_err}"}, ensure_ascii=False)
                     last_activity = time.time()
 
                     output_preview = output[:500] + ("..." if len(output) > 500 else "")
@@ -251,10 +281,16 @@ async def _ai_loop(sid: int, messages: list[dict], system_prompt: str, start_tur
                 await bus.publish(sid, "phase", {"phase": current_phase})
 
             found_this_turn = False
+            if markers.get("findings"):
+                recent_logs = await db.get_logs(sid, limit=0)
+                tool_logs = [l for l in recent_logs if l["role"] == "tool"]
+                poc, desc = _extract_poc_from_logs(tool_logs)
+
             for f in markers.get("findings", []):
                 verified = 1 if has_real_request else 0
                 fid = await db.add_finding(
                     sid, f["severity"], f["title"], f["vuln_type"], f["endpoint"],
+                    poc=poc, description=desc or full_text[:500],
                 )
                 if not has_real_request:
                     await bus.publish(sid, "stream", {

@@ -134,6 +134,7 @@ main { flex:1; display:flex; overflow:hidden; }
       <div class="header-btns">
         <span id="sessionStatus"></span>
         <button class="btn btn-ghost btn-sm" onclick="toggleFindings()">漏洞面板</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleBlackboard()">黑板</button>
         <button class="btn btn-danger btn-sm" id="stopBtn" onclick="stopCurrent()">停止</button>
       </div>
     </div>
@@ -155,6 +156,11 @@ main { flex:1; display:flex; overflow:hidden; }
       <div class="findings-panel" id="findingsPanel">
         <h3>发现的漏洞 (<span id="findingsCount">0</span>)</h3>
         <div id="findingsList"></div>
+      </div>
+      <div class="findings-panel" id="blackboardPanel">
+        <h3>黑板状态</h3>
+        <div id="bbSummary" style="padding:12px 16px;font-size:12px;"></div>
+        <div id="bbDetails" style="padding:0 16px;font-size:12px;"></div>
       </div>
     </div>
   </div>
@@ -360,11 +366,11 @@ function connectWS(sid) {
     if (msg.type === 'ping') return;
     switch(msg.type) {
       case 'stream': appendStream(msg.data.text); break;
-      case 'phase': updatePhaseBar(msg.data.phase); break;
+      case 'phase': updatePhaseBar(msg.data.phase); refreshBlackboard(); break;
       case 'status': updateStatus(msg.data.status); break;
-      case 'finding': addFindingCard(msg.data); break;
+      case 'finding': addFindingCard(msg.data); refreshBlackboard(); break;
       case 'error': appendLog('system', 'Error: '+msg.data.message); break;
-      case 'done': fetchSessions(); break;
+      case 'done': fetchSessions(); refreshBlackboard(); break;
     }
   };
   ws.onclose = () => { setTimeout(()=>{ if(currentSid===sid) connectWS(sid); }, 3000); };
@@ -432,6 +438,43 @@ function addFindingCard(f) {
 
 function toggleFindings() {
   document.getElementById('findingsPanel').classList.toggle('show');
+  document.getElementById('blackboardPanel').classList.remove('show');
+}
+
+function toggleBlackboard() {
+  const panel = document.getElementById('blackboardPanel');
+  panel.classList.toggle('show');
+  document.getElementById('findingsPanel').classList.remove('show');
+  if (panel.classList.contains('show') && currentSid) refreshBlackboard();
+}
+
+async function refreshBlackboard() {
+  if (!currentSid) return;
+  try {
+    const summary = await (await fetch(API+`/api/sessions/${currentSid}/blackboard/summary`)).json();
+    const labels = {attack_surfaces:'攻击面', verified_findings:'已验证', pending_hypotheses:'待验证', exploits:'利用原语', failure_records:'失败记录'};
+    const colors = {attack_surfaces:'var(--accent)', verified_findings:'var(--green)', pending_hypotheses:'var(--orange)', exploits:'var(--purple)', failure_records:'var(--red)'};
+    let html = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">';
+    for (const [k,v] of Object.entries(summary)) {
+      html += `<div style="background:var(--bg3);padding:6px 10px;border-radius:6px;border-left:3px solid ${colors[k]||'var(--border)'}"><div style="font-size:10px;color:var(--fg2)">${labels[k]||k}</div><div style="font-size:18px;font-weight:bold;color:${colors[k]}">${v}</div></div>`;
+    }
+    html += '</div>';
+    document.getElementById('bbSummary').innerHTML = html;
+
+    const entries = await (await fetch(API+`/api/sessions/${currentSid}/blackboard`)).json();
+    let details = '';
+    const grouped = {};
+    for (const e of entries) { (grouped[e.partition] = grouped[e.partition] || []).push(e); }
+    for (const [part, items] of Object.entries(grouped)) {
+      details += `<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:bold;color:${colors[part]||'var(--fg2)'};margin-bottom:4px">${labels[part]||part} (${items.length})</div>`;
+      for (const item of items.slice(0, 20)) {
+        const statusIcon = item.status === 'done' ? '✓' : item.status === 'failed' ? '✗' : '•';
+        details += `<div style="padding:3px 0;border-bottom:1px solid var(--border);font-size:11px;color:var(--fg2)"><span>${statusIcon}</span> <span style="color:var(--fg)">${item.key}</span>${item.value ? ' — '+item.value.substring(0,60) : ''}</div>`;
+      }
+      details += '</div>';
+    }
+    document.getElementById('bbDetails').innerHTML = details || '<div style="color:var(--fg2)">黑板为空</div>';
+  } catch(e) { console.error('blackboard error', e); }
 }
 
 async function sendMsg() {

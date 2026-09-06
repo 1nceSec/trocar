@@ -136,31 +136,90 @@ async def export_report(sid: int):
     if not session:
         raise HTTPException(status_code=404, detail="not found")
     findings = await db.get_findings(sid)
+    bb_summary = await db.bb_summary(sid)
+    attack_surfaces = await db.bb_read(sid, "attack_surfaces")
+    failure_records = await db.bb_read(sid, "failure_records")
+
     lines = [
         f"# 渗透测试报告 — {session['target']}",
         "",
+        "## 渗透结果",
+        "",
         f"- 测试时间: {session['created_at']}",
-        f"- 状态: {session['status']}",
+        f"- 结束状态: {session['status']}",
         f"- 对话轮次: {session['turns']}",
-        f"- 发现漏洞: {session['findings_count']}",
+        f"- 发现漏洞: {session['findings_count']} 个",
+        f"- 攻击面: {bb_summary.get('attack_surfaces', 0)} 个",
+        f"- 失败尝试: {bb_summary.get('failure_records', 0)} 次",
         "",
     ]
-    if not findings:
+
+    sev_count = {}
+    for f in findings:
+        sev_count[f['severity']] = sev_count.get(f['severity'], 0) + 1
+    if sev_count:
+        sev_str = "、".join(f"{s} {c}个" for s, c in sev_count.items())
+        lines.append(f"漏洞分布：{sev_str}。")
+    else:
         lines.append("未发现高价值漏洞。")
+    lines.append("")
+
+    if findings:
+        lines.append("## 漏洞详情")
+        lines.append("")
+        for i, f in enumerate(findings, 1):
+            lines.extend([
+                f"### {i}. [{f['severity']}] {f['title']}",
+                "",
+                f"- 类型: {f['vuln_type']}",
+            ])
+            if f.get('endpoint'):
+                lines.append(f"- 端点: {f['endpoint']}")
+            if f.get('verified'):
+                lines.append("- 验证状态: 已验证（有真实请求证据）")
+            else:
+                lines.append("- 验证状态: 待验证")
+            lines.append("")
+            lines.append("**PoC**")
+            lines.append("```")
+            lines.append(f.get('poc') or '暂无')
+            lines.append("```")
+            lines.append("")
+            if f.get('description'):
+                lines.append("**响应证据**")
+                lines.append("```")
+                lines.append(f['description'][:1000])
+                lines.append("```")
+                lines.append("")
+
+    if attack_surfaces:
+        lines.append("## 攻击面地图")
+        lines.append("")
+        lines.append("| 攻击面 | 详情 | 状态 |")
+        lines.append("|--------|------|------|")
+        for a in attack_surfaces[:50]:
+            lines.append(f"| {a['key']} | {(a.get('value') or '')[:80]} | {a['status']} |")
+        lines.append("")
+
+    if failure_records:
+        lines.append("## 失败记录")
+        lines.append("")
+        for fr in failure_records[:30]:
+            lines.append(f"- **{fr['key']}**: {(fr.get('value') or '')[:100]}")
+        lines.append("")
+
+    lines.extend([
+        "## 安全建议",
+        "",
+        "根据以上发现，建议：",
+        "",
+    ])
     for i, f in enumerate(findings, 1):
-        lines.extend([
-            f"## {i}. [{f['severity']}] {f['title']}",
-            "",
-            f"- 类型: {f['vuln_type']}",
-            f"- 端点: {f['endpoint']}" if f.get('endpoint') else "",
-            "",
-            "### PoC",
-            f.get('poc', '暂无'),
-            "",
-            "### 描述",
-            f.get('description', '暂无'),
-            "",
-        ])
+        lines.append(f"{i}. 修复 [{f['severity']}] {f['title']}（端点: {f.get('endpoint', 'N/A')}）")
+    if not findings:
+        lines.append("当前未发现高危漏洞，建议持续进行安全测试。")
+    lines.append("")
+
     from fastapi.responses import PlainTextResponse
     return PlainTextResponse(
         "\n".join(lines),
