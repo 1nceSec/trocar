@@ -124,3 +124,108 @@ def build_user_prompt(target: str, has_cookie: bool = False) -> str:
         "使用 execute_command 工具来执行所有测试命令。\n"
         "每发现一个接口/攻击面立即 blackboard_write 记录。"
     )
+
+
+LENSES = [
+    {
+        "id": "surface_recon",
+        "name": "攻击面侦察",
+        "phase": "threat_model",
+        "prompt": (
+            "切换视角：攻击面侦察。\n"
+            "重点：用 curl 抓首页和子页面，提取所有 JS/CSS/API 路径。"
+            "探测 /robots.txt /sitemap.xml /.env /swagger /api-docs /actuator /graphql 等。"
+            "将每个发现的接口/路径写入 blackboard attack_surfaces。"
+            "不要尝试利用，只做发现和记录。"
+        ),
+    },
+    {
+        "id": "js_reverse",
+        "name": "JS逆向分析",
+        "phase": "threat_model",
+        "prompt": (
+            "切换视角：JS逆向分析。\n"
+            "先 blackboard_read 获取已发现的 JS 文件列表。"
+            "逐个下载JS，重点搜索：硬编码密钥/Token/API Key、内部域名/IP、"
+            "API路由定义、认证逻辑（isDevelop/isDebug/isAdmin等后门标志）、"
+            "加密算法和密钥。"
+            "发现写入 blackboard pending_hypotheses，附带代码片段。"
+        ),
+    },
+    {
+        "id": "unauth_probe",
+        "name": "未授权访问探测",
+        "phase": "strike",
+        "prompt": (
+            "切换视角：未授权访问探测。\n"
+            "先 blackboard_read 获取 attack_surfaces 中所有接口。"
+            "逐个用 curl 测试无认证访问，记录返回状态码和响应长度。"
+            "200/30x 且有数据 = 写入 pending_hypotheses。"
+            "401/403 = 写入 failure_records，不再重试。"
+            "对 403 的接口尝试路径变体（删减前缀、大小写、添加后缀）。"
+        ),
+    },
+    {
+        "id": "exploit_craft",
+        "name": "漏洞利用构造",
+        "phase": "strike",
+        "prompt": (
+            "切换视角：漏洞利用构造。\n"
+            "先 blackboard_read 获取 pending_hypotheses 中所有待验证假设。"
+            "对每个假设构造具体的利用 PoC 并用 curl 执行真实请求。"
+            "成功利用 = FINDING + 写入 verified_findings + exploits。"
+            "失败 = 写入 failure_records 并说明原因。"
+            "记住：必须有真实响应证据，不能只靠推理。"
+        ),
+    },
+    {
+        "id": "bypass_403",
+        "name": "绕过探索",
+        "phase": "bypass",
+        "prompt": (
+            "切换视角：绕过探索。\n"
+            "先 blackboard_read failure_records 找到所有 403/401 的接口。"
+            "穷举绕过姿势：路径删减、参数污染、HTTP方法切换(GET→POST→PUT)、"
+            "UA头修改、Referer/Origin伪造、X-Forwarded-For/X-Real-IP注入、"
+            "大小写变体、双重URL编码、路径遍历。"
+            "每种尝试都用 curl 执行，成功则 FINDING。"
+        ),
+    },
+    {
+        "id": "deep_verify",
+        "name": "深度验证",
+        "phase": "deep_verify",
+        "prompt": (
+            "切换视角：深度验证。\n"
+            "先 blackboard_read verified_findings 和 exploits。"
+            "对每个已确认漏洞：评估真实危害、扩大影响面。"
+            "例如：拿到JWT后尝试访问更多接口、评估数据泄露量、"
+            "尝试越权操作（水平/垂直）。"
+            "更新 FINDING 的严重性评级。"
+        ),
+    },
+]
+
+
+def get_lenses_for_phase(phase: str) -> list[dict]:
+    return [l for l in LENSES if l["phase"] == phase]
+
+
+def get_next_lens(current_lens_id: str, phase: str) -> dict | None:
+    phase_lenses = get_lenses_for_phase(phase)
+    if not phase_lenses:
+        return None
+    if not current_lens_id:
+        return phase_lenses[0]
+    for i, l in enumerate(phase_lenses):
+        if l["id"] == current_lens_id and i + 1 < len(phase_lenses):
+            return phase_lenses[i + 1]
+    return None
+
+
+def get_all_lenses_ordered() -> list[dict]:
+    order = ["threat_model", "strike", "bypass", "deep_verify"]
+    result = []
+    for phase in order:
+        result.extend(get_lenses_for_phase(phase))
+    return result
