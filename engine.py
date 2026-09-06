@@ -321,7 +321,8 @@ async def _run_session(sid: int):
             target, session["cookie"], session["cookie_b"], session["scope_notes"]
         )
 
-        messages = [{"role": "user", "content": build_user_prompt(target)}]
+        has_cookie = bool(session["cookie"])
+        messages = [{"role": "user", "content": build_user_prompt(target, has_cookie)}]
         await db.add_log(sid, "user", messages[0]["content"], "init")
 
         await _ai_loop(sid, messages, system_prompt)
