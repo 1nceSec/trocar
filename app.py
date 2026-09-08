@@ -228,6 +228,86 @@ async def export_report(sid: int):
     )
 
 
+@app.get("/api/sessions/{sid}/handoff")
+async def generate_handoff(sid: int):
+    """Generate a handoff document for session resume — blackboard-powered structured memory."""
+    session = await db.get_session(sid)
+    if not session:
+        raise HTTPException(status_code=404, detail="not found")
+    findings = await db.get_findings(sid)
+    bb_summary = await db.bb_summary(sid)
+    attack_surfaces = await db.bb_read(sid, "attack_surfaces")
+    pending = await db.bb_read(sid, "pending_hypotheses")
+    verified = await db.bb_read(sid, "verified_findings")
+    failures = await db.bb_read(sid, "failure_records")
+    exploits = await db.bb_read(sid, "exploits")
+
+    lines = [
+        f"# 交接文档 — {session['target']}",
+        f"会话ID: {sid} | 阶段: {session['phase']} | 状态: {session['status']} | 轮次: {session['turns']}",
+        f"创建: {session['created_at']} | 更新: {session['updated_at']}",
+        "",
+        "## 1. 已确认漏洞",
+        "",
+    ]
+    if findings:
+        for f in findings:
+            v = "已验证" if f.get("verified") else "待验证"
+            lines.append(f"- [{f['severity']}] {f['title']} ({f['vuln_type']}) @ {f.get('endpoint', 'N/A')} [{v}]")
+    else:
+        lines.append("暂无确认漏洞。")
+
+    lines.extend(["", "## 2. 攻击面地图", ""])
+    if attack_surfaces:
+        for a in attack_surfaces[:30]:
+            lines.append(f"- {a['key']}: {(a.get('value') or '')[:100]} [{a['status']}]")
+    else:
+        lines.append("暂无攻击面记录。")
+
+    lines.extend(["", "## 3. 待验证假设", ""])
+    if pending:
+        for p in pending[:20]:
+            lines.append(f"- {p['key']}: {(p.get('value') or '')[:100]}")
+    else:
+        lines.append("无待验证假设。")
+
+    lines.extend(["", "## 4. 已构造利用原语", ""])
+    if exploits:
+        for e in exploits[:10]:
+            lines.append(f"- {e['key']}: {(e.get('value') or '')[:150]}")
+    else:
+        lines.append("无利用原语。")
+
+    lines.extend(["", "## 5. 失败记录（避免重复踩坑）", ""])
+    if failures:
+        for f in failures[:20]:
+            lines.append(f"- {f['key']}: {(f.get('value') or '')[:100]}")
+    else:
+        lines.append("无失败记录。")
+
+    lines.extend([
+        "",
+        "## 6. 后续建议",
+        "",
+        f"- 黑板统计: 攻击面{bb_summary.get('attack_surfaces', 0)} / 已验证{bb_summary.get('verified_findings', 0)} / 待验证{bb_summary.get('pending_hypotheses', 0)} / 利用原语{bb_summary.get('exploits', 0)} / 失败{bb_summary.get('failure_records', 0)}",
+        f"- 连续无发现: {session.get('no_finding_streak', 0)} 轮",
+    ])
+
+    if pending:
+        lines.append("- 优先处理待验证假设中的高价值项")
+    if session['status'] in ('low_roi', 'stopped'):
+        lines.append("- 考虑换方向或使用不同的测试视角")
+
+    lines.append("")
+
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse(
+        "\n".join(lines),
+        media_type="text/markdown; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="handoff-{sid}.md"'},
+    )
+
+
 @app.get("/api/health")
 async def health_check():
     s = cfg.load()
