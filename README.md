@@ -72,7 +72,6 @@ docker rm vulnhunter
 **Docker Compose（可选）：**
 
 ```yaml
-# docker-compose.yml
 version: '3.8'
 services:
   vulnhunter:
