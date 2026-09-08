@@ -50,6 +50,8 @@ Open **http://127.0.0.1:8899** in your browser. First launch will guide you thro
 
 ### Option 2: Docker
 
+Pull and run:
+
 ```bash
 docker run -d \
   --name vulnhunter \
