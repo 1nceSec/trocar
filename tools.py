@@ -3,7 +3,7 @@ import json
 import os
 import re
 from pathlib import Path
-from config import TEMP_DIR
+from config import TEMP_DIR, BASE_DIR
 
 BLOCKED_PATTERNS = [
     re.compile(r"\brm\s+-rf\s+/", re.IGNORECASE),
@@ -264,11 +264,17 @@ async def dispatch_tool(name: str, input_data: dict, session_cwd: str | None = N
             cwd=session_cwd,
         )
     elif name == "read_file":
-        result = await read_file(input_data["path"], input_data.get("max_lines", 200))
+        file_path = input_data["path"]
+        if not Path(file_path).is_absolute():
+            file_path = str(BASE_DIR / file_path)
+        result = await read_file(file_path, input_data.get("max_lines", 200))
     elif name == "write_file":
         result = await write_file(input_data["path"], input_data["content"], sandbox_root=session_cwd)
     elif name == "list_directory":
-        result = await list_directory(input_data["path"])
+        dir_path = input_data["path"]
+        if not Path(dir_path).is_absolute():
+            dir_path = str(BASE_DIR / dir_path)
+        result = await list_directory(dir_path)
     elif name == "blackboard_write":
         import db
         rid = await db.bb_write(
