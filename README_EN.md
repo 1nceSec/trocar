@@ -17,7 +17,7 @@ VulnHunter is an autonomous penetration testing system powered by AI. Give it a 
 
 Five-phase "surgeon mode": **Threat Modeling → Precision Strike → Deep Reflection → Bypass → Deep Verification**
 
-Built with AI Vibe Coding. Architecture inspired by [LuaN1aoAgent](https://github.com/Viper373/LuaN1aoAgent) (Planner-Executor-Reflector pattern).
+Built with AI Vibe Coding. Architecture inspired by [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent) (Planner-Executor-Reflector pattern).
 
 ## Features
 
@@ -205,11 +205,11 @@ vulnhunter/
 
 ## Acknowledgements
 
-- [LuaN1aoAgent](https://github.com/Viper373/LuaN1aoAgent) — Architecture inspiration (Planner-Executor-Reflector pattern)
+- [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent) — Architecture inspiration (Planner-Executor-Reflector pattern)
 
 ## Acknowledgments
 
-- [LuaN1aoAgent](https://github.com/Viper373/LuaN1aoAgent) — Architecture inspiration (Planner-Executor-Reflector pattern)
+- [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent) — Architecture inspiration (Planner-Executor-Reflector pattern)
 
 ## License
 
