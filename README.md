@@ -60,9 +60,15 @@ docker run -d \
 
 浏览器打开 http://127.0.0.1:8899
 
+查看日志：
+
 ```bash
 docker logs -f vulnhunter
+```
 
+停止和删除：
+
+```bash
 docker stop vulnhunter
 docker rm vulnhunter
 ```

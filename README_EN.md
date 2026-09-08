@@ -60,9 +60,15 @@ docker run -d \
 
 Open **http://127.0.0.1:8899** in your browser.
 
+View logs:
+
 ```bash
 docker logs -f vulnhunter
+```
 
+Stop and remove:
+
+```bash
 docker stop vulnhunter
 docker rm vulnhunter
 ```
