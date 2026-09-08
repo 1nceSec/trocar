@@ -12,6 +12,7 @@ DB_PATH = DATA_DIR / "vulnhunter.db"
 
 SKILL_DIR = Path(os.getenv("SKILL_DIR", r"E:\Claude\.claude\skills\pentest-ai-driven"))
 SKILL_FILE = SKILL_DIR / "SKILL.md"
+KNOWLEDGE_DIR = BASE_DIR / "knowledge"
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 MODEL = os.getenv("MODEL", "claude-sonnet-4-20250514")

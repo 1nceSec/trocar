@@ -1,24 +1,42 @@
-# VulnHunter — AI漏洞挖掘系统
+<div align="center">
 
-基于 AI 的自动化渗透测试平台。五阶段外科医生模式：**威胁建模 → 精准打击 → 深挖反思 → Bypass → 深度验证**。
+# VulnHunter
 
-## 特性
+**AI-Powered Autonomous Penetration Testing Platform**
 
-- **黑板架构** — 五分区持久化记忆（攻击面/已验证/待验证假设/利用原语/失败记录），避免重复探测
-- **模型分级** — 按阶段自动切换模型（强模型做建模和验证，快模型做打击），控制成本
-- **结果验证铁律** — FINDING 必须有真实 curl 请求证据，模型自述不算数
-- **连续无发现自动收敛** — 连续 N 轮无新发现自动停止，不烧 Token
-- **首次启动引导** — 浏览器内填 API Key 即可使用，无需编辑配置文件
-- **AI工具执行** — AI 自主执行 curl/脚本/文件操作（Anthropic Tool Use API）
-- **多模型支持** — Anthropic Claude / OpenAI / DeepSeek / Qwen / GLM 等 OpenAI 兼容 API
-- **实时流式输出** — WebSocket 推送 AI 测试过程和工具执行结果
-- **安全沙箱** — 命令执行内置危险操作拦截，文件写入限制在会话目录
-- **并发会话** — 同时对多个目标进行测试
-- **Docker 部署** — 一条命令启动
+[中文](README_CN.md) | English
 
-## 快速开始
+[![GitHub release](https://img.shields.io/github/v/release/1nceSec/vulnhunter)](https://github.com/1nceSec/vulnhunter/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-### 方式一：克隆运行
+</div>
+
+## What is VulnHunter?
+
+VulnHunter is an autonomous penetration testing system powered by AI. Give it a URL, it does the rest — JS analysis, endpoint discovery, vulnerability exploitation, and report generation.
+
+Five-phase "surgeon mode": **Threat Modeling → Precision Strike → Deep Reflection → Bypass → Deep Verification**
+
+Built with AI Vibe Coding. Architecture inspired by [LuaN1aoAgent](https://github.com/Viper373/LuaN1aoAgent) (Planner-Executor-Reflector pattern).
+
+## Features
+
+- **Blackboard Architecture** — Five-partition persistent memory (attack surfaces / verified findings / pending hypotheses / exploits / failure records) to avoid redundant probing
+- **34 Vulnerability Knowledge Modules** — Covers IDOR, SQLi, XSS, SSRF, RCE, JWT, GraphQL, WebSocket and more; auto-loads matching modules based on target characteristics
+- **Model Tiering** — Auto-switches models by phase (strong model for modeling & verification, fast model for striking), cost-efficient
+- **Verification Iron Rule** — Every finding MUST have real curl request evidence; model self-assertion doesn't count
+- **Multi-Lens Rotation** — 6 analysis perspectives across 4 phases, systematic coverage like a team of specialists
+- **Auto-Convergence** — Stops after N consecutive rounds with no new findings
+- **Browser Setup Wizard** — Configure API Key in browser on first launch, zero config file editing
+- **Multi-Model Support** — Anthropic Claude / OpenAI / DeepSeek / Qwen / GLM and any OpenAI-compatible API
+- **Real-time Streaming** — WebSocket push of AI testing process and tool execution results
+- **Security Sandbox** — Built-in dangerous command blocking + file write path restriction
+- **Concurrent Sessions** — Test multiple targets simultaneously
+- **Docker Ready** — One command to deploy
+
+## Quick Start
+
+### Option 1: Clone & Run
 
 ```bash
 git clone https://github.com/1nceSec/vulnhunter.git
@@ -27,127 +45,170 @@ pip install -r requirements.txt
 python app.py
 ```
 
-浏览器打开 **http://127.0.0.1:8899** ，首次打开会引导配置 API Key。
+Open **http://127.0.0.1:8899** in your browser. First launch will guide you through API Key setup.
 
-### 方式二：Docker
+### Option 2: Docker
 
 ```bash
-docker run -d -p 8899:8899 -v vulnhunter-data:/app/data ox1dq/vulnhunter
+# Pull and run (recommended)
+docker run -d \
+  --name vulnhunter \
+  -p 8899:8899 \
+  -v vulnhunter-data:/app/data \
+  ox1dq/vulnhunter:latest
+
+# Open browser
+# http://127.0.0.1:8899
+
+# View logs
+docker logs -f vulnhunter
+
+# Stop / Remove
+docker stop vulnhunter
+docker rm vulnhunter
 ```
 
-### 方式三：Windows 双击启动
+**Docker Compose (optional):**
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  vulnhunter:
+    image: ox1dq/vulnhunter:latest
+    ports:
+      - "8899:8899"
+    volumes:
+      - vulnhunter-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  vulnhunter-data:
+```
+
+```bash
+docker compose up -d
+```
+
+### Option 3: Windows Double-Click
 
 ```
-1. 下载并解压
-2. 双击 start.bat
-3. 浏览器打开 http://127.0.0.1:8899
+1. Download and extract the ZIP from Releases
+2. Double-click start.bat
+3. Open http://127.0.0.1:8899
 ```
 
-## 配置
+## Configuration
 
-### .env 文件
+### Environment Variables (.env)
 
-| 变量 | 说明 | 默认值 |
-|------|------|--------|
-| `ANTHROPIC_API_KEY` | API Key（首次启动在浏览器中配置） | - |
-| `MODEL` | 默认模型 | claude-sonnet-4-20250514 |
-| `MODEL_STRONG` | 强模型（建模/验证阶段） | claude-opus-4-20250514 |
-| `MODEL_FAST` | 快模型（打击阶段） | claude-haiku-4-5-20251001 |
-| `MAX_TOKENS` | 最大输出 token | 16384 |
-| `BURP_PROXY` | Burp 代理地址 | http://127.0.0.1:8080 |
-| `MAX_CONCURRENT` | 最大并发会话数 | 3 |
-| `INACTIVITY_TIMEOUT` | 无活动超时（秒） | 600 |
-| `MAX_TURNS` | 最大对话轮次 | 200 |
-| `NO_FINDING_STOP` | 连续无发现停止轮次 | 8 |
-| `HOST` | 监听地址 | 127.0.0.1 |
-| `PORT` | 监听端口 | 8899 |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ANTHROPIC_API_KEY` | API Key (configured via browser on first launch) | - |
+| `MODEL` | Default model | claude-sonnet-4-20250514 |
+| `MODEL_STRONG` | Strong model (modeling/verification phases) | claude-opus-4-20250514 |
+| `MODEL_FAST` | Fast model (strike phase) | claude-haiku-4-5-20251001 |
+| `MAX_TOKENS` | Max output tokens | 16384 |
+| `BURP_PROXY` | Burp proxy address (optional) | http://127.0.0.1:8080 |
+| `MAX_CONCURRENT` | Max concurrent sessions | 3 |
+| `MAX_TURNS` | Max conversation turns | 200 |
+| `NO_FINDING_STOP` | Auto-stop after N rounds without findings | 8 |
+| `HOST` | Listen address | 127.0.0.1 |
+| `PORT` | Listen port | 8899 |
 
-### Web 界面设置（运行时可改）
+### Web UI Settings (Runtime)
 
-点击右上角 **Settings** 按钮：
+Click **Settings** in the top-right corner to change provider, model, API Key, Base URL, Burp proxy, and concurrency at runtime.
 
-- **Provider** — 选择 Anthropic 或 OpenAI 兼容模式
-- **Model** — 模型名称（如 `claude-sonnet-4-20250514`、`deepseek-chat`、`gpt-4o`）
-- **API Key** — 运行时更换 Key
-- **Base URL** — OpenAI 兼容 API 地址（如 `https://api.deepseek.com/v1`）
-- **Burp 代理** — Burp Suite 代理地址
-- **最大并发** — 同时运行的会话数
+### Skill Editor
 
-### Skill 编辑
+Click **Skill** to edit the core strategy file (SKILL.md) online. New sessions will use the updated Skill.
 
-点击右上角 **Skill** 按钮，在线编辑核心技能文件（SKILL.md）。修改后新建的测试会话会使用更新后的 Skill。
+## Multi-Model Support
 
-## 使用 OpenAI 兼容模型
-
-在 Settings 中：
-1. Provider 选择 `OpenAI / 兼容API`
-2. 填入 Base URL 和 API Key
-3. 填入模型名称
-
-| 模型 | Base URL | Model |
-|------|----------|-------|
+| Provider | Base URL | Model |
+|----------|----------|-------|
+| Anthropic | *(default)* | `claude-sonnet-4-20250514` |
 | DeepSeek | `https://api.deepseek.com/v1` | `deepseek-chat` |
 | Qwen | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `qwen-max` |
 | GLM | `https://open.bigmodel.cn/api/paas/v4` | `glm-4-plus` |
-| Ollama 本地 | `http://127.0.0.1:11434/v1` | `llama3.1` |
+| Ollama | `http://127.0.0.1:11434/v1` | `llama3.1` |
 | OpenAI | `https://api.openai.com/v1` | `gpt-4o` |
 
-> 注意：非 Claude 模型的测试效果取决于模型自身的安全知识和推理能力。
+> Note: Non-Claude models' effectiveness depends on the model's own security knowledge and reasoning capabilities.
 
-## 项目结构
+## How It Works
 
 ```
-vuln-hunter/
-├── app.py              # FastAPI 主应用（REST API + WebSocket）
-├── engine.py           # AI 工作引擎（会话循环 + 工具调用 + 模型分级）
-├── llm.py              # LLM 抽象层（Anthropic Tool Use + OpenAI 兼容）
-├── tools.py            # 工具沙箱（命令执行/文件读写/黑板读写 + 安全拦截）
-├── db.py               # SQLite 数据库（含黑板五分区表）
-├── events.py           # WebSocket 事件总线
-├── prompt.py           # 提示词构建器（含黑板协议 + 验证铁律）
-├── settings.py         # 运行时设置管理
-├── config.py           # 环境变量配置
-├── Dockerfile          # Docker 部署
-├── requirements.txt    # Python 依赖
-├── .env.example        # 配置模板
-├── start.bat           # Windows 一键启动
-├── start.sh            # Linux 一键启动
+Input: https://target.com
+
+Phase 1: Threat Modeling (strong model)
+  Lens: Surface Recon → curl pages, probe sensitive paths, collect endpoints
+  Lens: JS Reverse   → download JS, search for hardcoded keys/secrets
+
+Phase 2: Precision Strike (fast model)
+  Lens: Unauth Probe  → test each endpoint without authentication
+  Lens: Exploit Craft  → build PoC for hypotheses, verify with real requests
+
+Phase 3: Bypass
+  Lens: Bypass 403    → path truncation, parameter pollution, UA spoofing...
+
+Phase 4: Deep Verification (strong model)
+  Lens: Deep Verify   → assess real impact, expand attack surface
+
+Auto-stop after N rounds with no new findings
+```
+
+## Architecture
+
+```
+vulnhunter/
+├── app.py              # FastAPI app (REST API + WebSocket)
+├── engine.py           # AI engine (session loop + tool calls + model tiering)
+├── llm.py              # LLM abstraction (Anthropic Tool Use + OpenAI compat)
+├── tools.py            # Tool sandbox (cmd exec / file I/O / blackboard + safety)
+├── db.py               # SQLite database (with blackboard 5-partition table)
+├── events.py           # WebSocket event bus
+├── prompt.py           # Prompt builder (blackboard protocol + verification rule + KB index)
+├── settings.py         # Runtime settings
+├── config.py           # Environment config
+├── Dockerfile          # Docker deployment
+├── knowledge/          # 34 vulnerability knowledge modules (IDOR/SQLi/XSS/SSRF/RCE...)
 ├── templates/
-│   ├── index.html      # 前端仪表盘
-│   └── setup.html      # 首次启动引导页
-├── static/             # 静态资源
-└── data/               # 运行时数据（自动创建）
+│   ├── index.html      # Dashboard
+│   └── setup.html      # First-launch setup wizard
+└── data/               # Runtime data (auto-created)
 ```
 
-## API
+## API Reference
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/` | 前端仪表盘（首次进入为引导页） |
-| POST | `/api/setup` | 首次配置 API Key |
-| POST | `/api/sessions` | 创建测试会话 |
-| GET | `/api/sessions` | 列出所有会话 |
-| GET | `/api/sessions/{id}` | 获取会话详情 |
-| POST | `/api/sessions/{id}/stop` | 停止会话 |
-| DELETE | `/api/sessions/{id}` | 删除会话 |
-| POST | `/api/sessions/{id}/input` | 发送用户消息 |
-| GET | `/api/sessions/{id}/findings` | 获取漏洞列表 |
-| GET | `/api/sessions/{id}/blackboard` | 获取黑板内容 |
-| GET | `/api/sessions/{id}/blackboard/summary` | 黑板五分区统计 |
-| GET | `/api/sessions/{id}/logs` | 获取对话日志 |
-| GET | `/api/settings` | 获取设置 |
-| PUT | `/api/settings` | 更新设置 |
-| GET | `/api/skill` | 获取 Skill 内容 |
-| PUT | `/api/skill` | 更新 Skill 内容 |
-| WS | `/ws/{id}` | WebSocket 实时推送 |
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/` | Dashboard (setup wizard on first visit) |
+| POST | `/api/setup` | First-time API Key configuration |
+| POST | `/api/sessions` | Create test session |
+| GET | `/api/sessions` | List all sessions |
+| GET | `/api/sessions/{id}` | Get session details |
+| POST | `/api/sessions/{id}/stop` | Stop session |
+| DELETE | `/api/sessions/{id}` | Delete session |
+| POST | `/api/sessions/{id}/input` | Send user message |
+| GET | `/api/sessions/{id}/findings` | Get vulnerability list |
+| GET | `/api/sessions/{id}/blackboard` | Get blackboard content |
+| GET | `/api/sessions/{id}/blackboard/summary` | Blackboard 5-partition stats |
+| GET | `/api/sessions/{id}/logs` | Get conversation logs |
+| GET | `/api/sessions/{id}/report` | Export Markdown report |
+| GET | `/api/settings` | Get settings |
+| PUT | `/api/settings` | Update settings |
+| WS | `/ws/{id}` | WebSocket real-time push |
 
-## 与 CLI 模式的关系
+## Acknowledgements
 
-| | CLI 交互模式 | VulnHunter Web |
-|--|-------------|----------------|
-| 工具 | Burp MCP + 文件操作 + 全套 | curl/脚本执行（Tool Use API）+ 文件读写 |
-| 交互 | 手动对话 | AI 自动循环 + 工具自主调用 |
-| 适合 | 单目标深度挖掘 | 多目标并发、挂机跑 |
-| Skill | 共享同一个 SKILL.md | 共享同一个 SKILL.md（Web可在线编辑） |
+- [LuaN1aoAgent](https://github.com/Viper373/LuaN1aoAgent) — Architecture inspiration (Planner-Executor-Reflector pattern)
 
-两者可以并行使用，互不影响。
+## Acknowledgments
+
+- [LuaN1aoAgent](https://github.com/Viper373/LuaN1aoAgent) — Architecture inspiration (Planner-Executor-Reflector pattern)
+
+## License
+
+MIT
