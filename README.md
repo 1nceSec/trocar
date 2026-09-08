@@ -75,7 +75,7 @@ docker stop vulnhunter
 docker rm vulnhunter
 ```
 
-**Docker Compose（可选）：**
+**Docker Compose（可选）：** 创建 `docker-compose.yml`：
 
 ```yaml
 version: '3.8'
@@ -87,10 +87,11 @@ services:
     volumes:
       - vulnhunter-data:/app/data
     restart: unless-stopped
-
 volumes:
   vulnhunter-data:
 ```
+
+启动：
 
 ```bash
 docker compose up -d
