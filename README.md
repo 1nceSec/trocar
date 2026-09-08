@@ -17,7 +17,7 @@ VulnHunter 是一个 AI 自主渗透测试系统。给它一个 URL，它会自�
 
 五阶段「外科手术」模式：**威胁建模 → 精准打击 → 深度反思 → 绕过探索 → 深度验证**
 
-> 本项目通过 AI Vibe Coding 构建，架构设计参考了 [LuaN1aoAgent](https://github.com/Viper373/LuaN1aoAgent)（Planner-Executor-Reflector 模式）。
+> 本项目通过 AI Vibe Coding 构建，架构设计参考了 [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent)（Planner-Executor-Reflector 模式）。
 
 ## 核心特性
 
@@ -205,7 +205,7 @@ vulnhunter/
 
 ## 致谢
 
-- [LuaN1aoAgent](https://github.com/Viper373/LuaN1aoAgent) — 架构灵感来源（Planner-Executor-Reflector 模式）
+- [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent) — 架构灵感来源（Planner-Executor-Reflector 模式）
 
 ## 许可证
 
