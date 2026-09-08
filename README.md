@@ -50,6 +50,8 @@ python app.py
 
 ### 方式二：Docker（推荐）
 
+拉取并启动：
+
 ```bash
 docker run -d \
   --name vulnhunter \
