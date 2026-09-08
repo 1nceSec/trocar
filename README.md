@@ -51,20 +51,18 @@ python app.py
 ### 方式二：Docker（推荐）
 
 ```bash
-# 拉取并启动
 docker run -d \
   --name vulnhunter \
   -p 8899:8899 \
   -v vulnhunter-data:/app/data \
   ox1dq/vulnhunter:latest
+```
 
-# 打开浏览器
-# http://127.0.0.1:8899
+浏览器打开 http://127.0.0.1:8899
 
-# 查看日志
+```bash
 docker logs -f vulnhunter
 
-# 停止 / 删除
 docker stop vulnhunter
 docker rm vulnhunter
 ```

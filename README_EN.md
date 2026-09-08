@@ -51,20 +51,18 @@ Open **http://127.0.0.1:8899** in your browser. First launch will guide you thro
 ### Option 2: Docker
 
 ```bash
-# Pull and run (recommended)
 docker run -d \
   --name vulnhunter \
   -p 8899:8899 \
   -v vulnhunter-data:/app/data \
   ox1dq/vulnhunter:latest
+```
 
-# Open browser
-# http://127.0.0.1:8899
+Open **http://127.0.0.1:8899** in your browser.
 
-# View logs
+```bash
 docker logs -f vulnhunter
 
-# Stop / Remove
 docker stop vulnhunter
 docker rm vulnhunter
 ```
