@@ -105,6 +105,54 @@ docker compose up -d
 3. 浏览器打开 http://127.0.0.1:8899
 ```
 
+## 更新升级
+
+VulnHunter 不会自动更新，发布新版本后需要手动操作。
+
+### 克隆运行
+
+```bash
+cd vulnhunter
+git pull
+pip install -r requirements.txt
+python app.py
+```
+
+### Docker
+
+```bash
+# 拉取最新镜像
+docker pull ox1dq/vulnhunter:latest
+
+# 停止并删除旧容器（data 卷会保留）
+docker stop vulnhunter
+docker rm vulnhunter
+
+# 用新镜像启动
+docker run -d \
+  --name vulnhunter \
+  -p 8899:8899 \
+  -v vulnhunter-data:/app/data \
+  ox1dq/vulnhunter:latest
+```
+
+Docker Compose 用户：
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+> `vulnhunter-data` 卷独立于容器，更新不会丢失已有的会话数据和配置。
+
+### Windows ZIP
+
+```
+1. 从 Releases 下载最新版 ZIP
+2. 解压覆盖旧目录（data/ 目录建议先备份）
+3. 双击 start.bat
+```
+
 ## 配置说明
 
 ### 环境变量（.env）
