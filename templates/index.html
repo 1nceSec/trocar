@@ -115,6 +115,19 @@ main { flex:1; display:flex; overflow:hidden; }
   <div class="sidebar">
     <div class="sidebar-header">
       <h2>测试会话</h2>
+      <input type="text" id="searchInput" placeholder="搜索目标..." style="width:100%;margin:6px 0;padding:6px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--fg);font-size:12px;outline:none;" oninput="fetchSessions()">
+      <div style="display:flex;gap:4px;margin-bottom:6px;">
+        <select id="groupFilter" style="flex:1;padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--fg);font-size:11px;" onchange="fetchSessions()">
+          <option value="">全部分组</option>
+        </select>
+        <select id="sevFilter" style="flex:1;padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--fg);font-size:11px;" onchange="fetchSessions()">
+          <option value="">全部等级</option>
+          <option value="critical">严重</option>
+          <option value="high">高危</option>
+          <option value="medium">中危</option>
+          <option value="low">低危</option>
+        </select>
+      </div>
       <button class="btn btn-primary btn-block" onclick="showNewModal()">+ 新建测试</button>
     </div>
     <div class="session-list" id="sessionList">
@@ -185,6 +198,11 @@ main { flex:1; display:flex; overflow:hidden; }
     <div class="form-group">
       <label>备注</label>
       <input type="text" id="inputNotes" placeholder="业务类型、禁测路径等">
+    </div>
+    <div class="form-group">
+      <label>分组（可选，如"XX平台"）</label>
+      <input type="text" id="inputGroup" placeholder="输入或选择分组名" list="groupSuggestions">
+      <datalist id="groupSuggestions"></datalist>
     </div>
     <div class="form-actions">
       <button class="btn btn-ghost" onclick="hideNewModal()">取消</button>
@@ -264,31 +282,82 @@ let ws = null;
 const PHASES = ['threat_model','strike','reflect','bypass','deep_verify'];
 
 async function fetchSessions() {
-  const res = await fetch(API+'/api/sessions');
-  const list = await res.json();
+  const search = (document.getElementById('searchInput')?.value || '').trim();
+  const group = document.getElementById('groupFilter')?.value || '';
+  const sevFilter = document.getElementById('sevFilter')?.value || '';
+  let url = API+'/api/sessions?';
+  if (search) url += 'search='+encodeURIComponent(search)+'&';
+  if (group) url += 'group='+encodeURIComponent(group)+'&';
+  const res = await fetch(url);
+  let list = await res.json();
+  if (sevFilter) {
+    list = list.filter(s => {
+      const sum = s.severity_summary || {};
+      return Object.keys(sum).some(k => k.toLowerCase().includes(sevFilter));
+    });
+  }
   const el = document.getElementById('sessionList');
   if (!list.length) {
     el.innerHTML = '<div class="empty"><h3>暂无会话</h3><p>点击上方按钮开始</p></div>';
     updateGlobalStats([]);
     return;
   }
-  el.innerHTML = list.map(s => `
-    <div class="session-item ${s.id===currentSid?'active':''}" onclick="selectSession(${s.id})">
-      <button class="del-btn" onclick="event.stopPropagation();deleteSession(${s.id})" title="删除">&times;</button>
-      <div class="target">${esc(s.target)}</div>
-      <div class="meta">
-        <span class="badge badge-${s.status}">${statusText(s.status)}</span>
-        <span>${s.findings_count} 漏洞 · ${s.turns} 轮</span>
-      </div>
-    </div>
-  `).join('');
+  const groups = {};
+  list.forEach(s => { const g = s.group_name || '未分组'; (groups[g]=groups[g]||[]).push(s); });
+  let html = '';
+  for (const [gname, items] of Object.entries(groups)) {
+    if (Object.keys(groups).length > 1 || gname !== '未分组') {
+      html += `<div style="padding:6px 12px;font-size:11px;font-weight:bold;color:var(--accent);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">${esc(gname)} <span style="font-weight:normal;color:var(--fg2)">${items.length}</span></div>`;
+    }
+    html += items.map(s => {
+      const sum = s.severity_summary || {};
+      const badges = Object.entries(sum).map(([sev,cnt]) => {
+        const c = sevColor(sev);
+        return `<span style="background:${c}22;color:${c};padding:1px 4px;border-radius:3px;font-size:10px;margin-right:2px;">${sev}:${cnt}</span>`;
+      }).join('');
+      return `
+      <div class="session-item ${s.id===currentSid?'active':''}" onclick="selectSession(${s.id})">
+        <button class="del-btn" onclick="event.stopPropagation();deleteSession(${s.id})" title="删除">&times;</button>
+        <div class="target">${esc(s.target)}</div>
+        <div class="meta">
+          <span class="badge badge-${s.status}">${statusText(s.status)}</span>
+          <span>${s.findings_count} 漏洞 · ${s.turns} 轮</span>
+        </div>
+        ${badges ? '<div style="padding:2px 0 0">'+badges+'</div>' : ''}
+      </div>`;
+    }).join('');
+  }
+  el.innerHTML = html;
   updateGlobalStats(list);
+  loadGroups();
+}
+
+function sevColor(sev) {
+  const s = (sev||'').toLowerCase();
+  if (s.includes('critical')||s.includes('严重')||s.includes('p0')) return '#ff4444';
+  if (s.includes('high')||s.includes('高')||s.includes('p1')) return '#ff8800';
+  if (s.includes('medium')||s.includes('中')||s.includes('p2')) return '#ffcc00';
+  return '#88cc88';
+}
+
+async function loadGroups() {
+  try {
+    const groups = await (await fetch(API+'/api/groups')).json();
+    const sel = document.getElementById('groupFilter');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">全部分组</option>' + groups.map(g => `<option value="${esc(g)}" ${g===cur?'selected':''}>${esc(g)}</option>`).join('');
+    const dl = document.getElementById('groupSuggestions');
+    if (dl) dl.innerHTML = groups.map(g => `<option value="${esc(g)}">`).join('');
+  } catch(e) {}
 }
 
 function updateGlobalStats(list) {
   const running = list.filter(s=>s.status==='running').length;
   const vulns = list.reduce((a,s)=>a+s.findings_count,0);
-  document.getElementById('globalStats').textContent = `运行: ${running} | 漏洞: ${vulns} | 总会话: ${list.length}`;
+  const allSev = {};
+  list.forEach(s => { for (const [k,v] of Object.entries(s.severity_summary||{})) { allSev[k]=(allSev[k]||0)+v; } });
+  const sevStr = Object.entries(allSev).map(([k,v])=>k+':'+v).join(' ');
+  document.getElementById('globalStats').textContent = `运行:${running} | 漏洞:${vulns} ${sevStr ? '('+sevStr+')' : ''} | 会话:${list.length}`;
 }
 
 function statusText(s) {
@@ -309,6 +378,7 @@ async function createSession() {
     cookie: document.getElementById('inputCookie').value.trim(),
     cookie_b: document.getElementById('inputCookieB').value.trim(),
     scope_notes: document.getElementById('inputNotes').value.trim(),
+    group_name: (document.getElementById('inputGroup')?.value || '').trim(),
   };
   const res = await fetch(API+'/api/sessions', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
   const data = await res.json();

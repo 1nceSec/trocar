@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     cookie TEXT DEFAULT '',
     cookie_b TEXT DEFAULT '',
     scope_notes TEXT DEFAULT '',
+    group_name TEXT DEFAULT '',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     finished_at TIMESTAMP,
@@ -61,6 +62,10 @@ CREATE TABLE IF NOT EXISTS blackboard (
 async def init_db():
     async with aiosqlite.connect(DB_PATH) as conn:
         await conn.executescript(SCHEMA)
+        try:
+            await conn.execute("ALTER TABLE sessions ADD COLUMN group_name TEXT DEFAULT ''")
+        except Exception:
+            pass
         await conn.commit()
 
 
@@ -70,11 +75,11 @@ async def get_db():
     return conn
 
 
-async def create_session(target: str, cookie: str = "", cookie_b: str = "", scope_notes: str = "") -> int:
+async def create_session(target: str, cookie: str = "", cookie_b: str = "", scope_notes: str = "", group_name: str = "") -> int:
     async with aiosqlite.connect(DB_PATH) as conn:
         cur = await conn.execute(
-            "INSERT INTO sessions (target, cookie, cookie_b, scope_notes) VALUES (?, ?, ?, ?)",
-            (target, cookie, cookie_b, scope_notes),
+            "INSERT INTO sessions (target, cookie, cookie_b, scope_notes, group_name) VALUES (?, ?, ?, ?, ?)",
+            (target, cookie, cookie_b, scope_notes, group_name),
         )
         await conn.commit()
         return cur.lastrowid
@@ -98,11 +103,35 @@ async def get_session(sid: int) -> dict | None:
         return dict(row) if row else None
 
 
-async def list_sessions() -> list[dict]:
+async def list_sessions(search: str = "", group: str = "") -> list[dict]:
     async with aiosqlite.connect(DB_PATH) as conn:
         conn.row_factory = aiosqlite.Row
-        cur = await conn.execute("SELECT * FROM sessions ORDER BY id DESC")
-        return [dict(r) for r in await cur.fetchall()]
+        q = "SELECT * FROM sessions WHERE 1=1"
+        params: list = []
+        if search:
+            q += " AND target LIKE ?"
+            params.append(f"%{search}%")
+        if group:
+            q += " AND group_name=?"
+            params.append(group)
+        q += " ORDER BY id DESC"
+        cur = await conn.execute(q, params)
+        sessions = [dict(r) for r in await cur.fetchall()]
+        for s in sessions:
+            cur2 = await conn.execute(
+                "SELECT severity, COUNT(*) as cnt FROM findings WHERE session_id=? GROUP BY severity",
+                (s["id"],),
+            )
+            s["severity_summary"] = {row[0]: row[1] for row in await cur2.fetchall()}
+        return sessions
+
+
+async def list_groups() -> list[str]:
+    async with aiosqlite.connect(DB_PATH) as conn:
+        cur = await conn.execute(
+            "SELECT DISTINCT group_name FROM sessions WHERE group_name != '' ORDER BY group_name"
+        )
+        return [row[0] for row in await cur.fetchall()]
 
 
 async def add_finding(session_id: int, severity: str, title: str, vuln_type: str,

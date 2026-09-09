@@ -16,6 +16,7 @@ from tools import dispatch_tool
 _semaphore: asyncio.Semaphore | None = None
 _semaphore_limit: int = 0
 _tasks: dict[int, asyncio.Task] = {}
+_pause_events: dict[int, asyncio.Event] = {}
 
 RE_PHASE = re.compile(r"^PHASE:\s*(.+)$", re.MULTILINE)
 RE_STATUS = re.compile(r"^STATUS:\s*(.+)$", re.MULTILINE)
@@ -174,6 +175,14 @@ async def _ai_loop(sid: int, messages: list[dict], system_prompt: str, start_tur
 
     try:
         while turns < MAX_TURNS:
+            # 暂停检查：如果被暂停，等待恢复信号
+            pause_ev = _pause_events.get(sid)
+            if pause_ev and not pause_ev.is_set():
+                await bus.publish(sid, "stream", {"text": "\n⏸️ 已暂停，等待恢复...\n"})
+                await pause_ev.wait()
+                await bus.publish(sid, "stream", {"text": "\n▶️ 已恢复，继续测试\n"})
+                last_activity = time.time()
+
             if not _check_temp_size(sid):
                 await db.update_session(sid, status="error")
                 await bus.publish(sid, "error", {"message": "临时目录超限"})
@@ -373,6 +382,7 @@ async def _ai_loop(sid: int, messages: list[dict], system_prompt: str, start_tur
     finally:
         await bus.publish(sid, "done", {})
         _tasks.pop(sid, None)
+        _pause_events.pop(sid, None)
 
 
 async def _run_session(sid: int):
@@ -417,27 +427,160 @@ async def _resume_session(sid: int, user_msg: str):
 async def start_session(sid: int):
     if sid in _tasks:
         return
+    ev = asyncio.Event()
+    ev.set()
+    _pause_events[sid] = ev
     task = asyncio.create_task(_run_session(sid))
     _tasks[sid] = task
 
 
 async def stop_session(sid: int):
     await db.update_session(sid, status="stopped")
+    ev = _pause_events.pop(sid, None)
+    if ev:
+        ev.set()
     task = _tasks.pop(sid, None)
     if task and not task.done():
         task.cancel()
     await bus.publish(sid, "status", {"status": "stopped"})
 
 
+async def pause_session(sid: int):
+    session = await db.get_session(sid)
+    if not session or session["status"] != "running":
+        return False
+    ev = _pause_events.get(sid)
+    if not ev:
+        ev = asyncio.Event()
+        ev.set()
+        _pause_events[sid] = ev
+    ev.clear()
+    await db.update_session(sid, status="paused")
+    await bus.publish(sid, "status", {"status": "paused"})
+    return True
+
+
+async def resume_session(sid: int):
+    session = await db.get_session(sid)
+    if not session or session["status"] != "paused":
+        return False
+    ev = _pause_events.get(sid)
+    if ev:
+        ev.set()
+    await db.update_session(sid, status="running")
+    await bus.publish(sid, "status", {"status": "running"})
+    return True
+
+
+CHAT_ALLOWED = ("need_input", "low_roi", "stopped", "vuln_found", "error", "paused")
+
+
 async def send_input(sid: int, user_msg: str):
     session = await db.get_session(sid)
-    if not session or session["status"] != "need_input":
+    if not session or session["status"] not in CHAT_ALLOWED:
         return False
     await db.add_log(sid, "user", user_msg, "")
     await db.update_session(sid, status="running")
-    task = asyncio.create_task(_resume_session(sid, user_msg))
+    task = asyncio.create_task(_chat_session(sid, user_msg))
     _tasks[sid] = task
     return True
+
+
+async def _chat_session(sid: int, user_msg: str):
+    """Post-task conversation — answer user questions with full blackboard context."""
+    sem = _get_semaphore()
+    async with sem:
+        session = await db.get_session(sid)
+        if not session:
+            return
+
+        s = cfg.load()
+        if not s.get("api_key"):
+            await bus.publish(sid, "error", {"message": "未配置 API Key"})
+            await bus.publish(sid, "done", {})
+            _tasks.pop(sid, None)
+            return
+
+        target = session["target"]
+        findings = await db.get_findings(sid)
+        bb_summary = await db.bb_summary(sid)
+        attack_surfaces = await db.bb_read(sid, "attack_surfaces")
+        verified = await db.bb_read(sid, "verified_findings")
+        failures = await db.bb_read(sid, "failure_records")
+
+        context_parts = [
+            f"目标: {target}",
+            f"测试轮次: {session['turns']} | 阶段: {session['phase']}",
+            f"黑板: 攻击面{bb_summary.get('attack_surfaces',0)} 已验证{bb_summary.get('verified_findings',0)} 失败{bb_summary.get('failure_records',0)}",
+        ]
+        if findings:
+            context_parts.append("已发现漏洞:")
+            for f in findings:
+                v = "已验证" if f.get("verified") else "待验证"
+                context_parts.append(f"  - [{f['severity']}] {f['title']} ({f['vuln_type']}) @ {f.get('endpoint','N/A')} [{v}]")
+        if attack_surfaces:
+            context_parts.append(f"攻击面（前10）: {', '.join(a['key'] for a in attack_surfaces[:10])}")
+
+        system_prompt = (
+            "你是 VulnHunter 的安全助手。测试已结束，用户正在复盘/追问。\n"
+            "基于以下测试结果回答问题，可以用 execute_command 执行额外验证。\n\n"
+            + "\n".join(context_parts)
+        )
+
+        messages = [{"role": "user", "content": user_msg}]
+
+        try:
+            resp = await _do_one_llm_call(sid, s, system_prompt, messages, s["model"])
+            text = resp.get("text", "")
+            tool_calls = resp.get("tool_calls", [])
+
+            if text:
+                await bus.publish(sid, "stream", {"text": text})
+                await db.add_log(sid, "assistant", text, "")
+
+            tool_round = 0
+            provider = s["provider"]
+            while tool_calls and tool_round < 5:
+                tool_round += 1
+                if provider == "anthropic":
+                    raw = resp.get("raw_content")
+                    messages.append({"role": "assistant", "content": raw or text})
+                else:
+                    messages.append({"role": "assistant", "content": text})
+
+                results = []
+                session_cwd = str(_session_temp(sid))
+                for tc in tool_calls:
+                    await bus.publish(sid, "stream", {
+                        "text": f"\n🔧 {tc['name']}: {json.dumps(tc['input'], ensure_ascii=False)[:200]}\n"
+                    })
+                    try:
+                        output = await dispatch_tool(tc["name"], tc["input"], session_cwd, session_id=sid)
+                    except Exception as e:
+                        output = json.dumps({"success": False, "error": str(e)}, ensure_ascii=False)
+                    results.append({"id": tc["id"], "output": output})
+                    await bus.publish(sid, "stream", {"text": f"📋 {output[:300]}\n"})
+
+                if provider == "anthropic":
+                    messages.append(build_tool_result_anthropic(results))
+                else:
+                    messages.extend(build_tool_result_openai(results))
+
+                resp = await _do_one_llm_call(sid, s, system_prompt, messages, s["model"])
+                text = resp.get("text", "")
+                tool_calls = resp.get("tool_calls", [])
+                if text:
+                    await bus.publish(sid, "stream", {"text": text})
+                    await db.add_log(sid, "assistant", text, "")
+
+        except Exception as e:
+            await bus.publish(sid, "error", {"message": str(e)})
+
+        finally:
+            prev_status = session["status"] if session["status"] != "running" else "low_roi"
+            await db.update_session(sid, status=prev_status)
+            await bus.publish(sid, "done", {})
+            _tasks.pop(sid, None)
 
 
 def cleanup_temp(sid: int):
