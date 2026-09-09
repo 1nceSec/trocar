@@ -376,7 +376,7 @@ async def get_skill():
     content = ""
     if SKILL_FILE.exists():
         content = SKILL_FILE.read_text(encoding="utf-8")
-    return {"path": str(SKILL_FILE), "content": content}
+    return {"content": content}
 
 
 @app.put("/api/skill")
@@ -388,7 +388,7 @@ async def update_skill(request: Request):
         raise HTTPException(status_code=400, detail="content is required")
     SKILL_FILE.parent.mkdir(parents=True, exist_ok=True)
     SKILL_FILE.write_text(content, encoding="utf-8")
-    return {"ok": True, "path": str(SKILL_FILE)}
+    return {"ok": True}
 
 
 @app.websocket("/ws/{sid}")

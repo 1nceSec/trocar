@@ -42,7 +42,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .search-box input{flex:1;border:none;background:transparent;color:var(--text);font-size:13px;font-family:var(--font);outline:none;}
 .search-box input::placeholder{color:var(--text3);}
 .filter-row{display:flex;gap:6px;margin-bottom:10px;}
-.filter-select{flex:1;padding:5px 8px;background:var(--bg3);border:none;border-radius:var(--radius-xs);color:var(--text2);font-size:11px;font-family:var(--font);cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='8' height='6' viewBox='0 0 8 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L4 4.5L7 1.5' stroke='%2386868b' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:22px;}
+.filter-select{flex:1;padding:5px 8px;background:var(--bg3);border:none;border-radius:var(--radius-sm);color:var(--text2);font-size:11px;font-family:var(--font);cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='8' height='6' viewBox='0 0 8 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L4 4.5L7 1.5' stroke='%2386868b' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:22px;}
 .session-list{flex:1;overflow-y:auto;padding:0 8px 8px;}.session-list::-webkit-scrollbar{width:0;}
 .group-label{padding:8px 8px 4px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;display:flex;justify-content:space-between;}
 .session-card{padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;margin-bottom:2px;transition:background 0.12s ease;position:relative;}
@@ -161,7 +161,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   <div class="form-actions"><button class="btn btn-secondary" onclick="hideNewModal()">取消</button><button class="btn btn-primary" onclick="createSession()">开始测试</button></div>
 </div></div>
 <div class="modal-overlay" id="skillModal"><div class="modal" style="width:720px;height:80vh;display:flex;flex-direction:column">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2>Skill 编辑器</h2><span id="skillPath" style="font-size:11px;color:var(--text3)"></span></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2>Skill 编辑器</h2><label class="btn btn-secondary" style="cursor:pointer;margin:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg> 导入文件<input type="file" id="skillFileInput" accept=".md,.txt" style="display:none" onchange="loadSkillFile(this)"></label></div>
   <textarea id="skillEditor" style="flex:1;width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;color:var(--text);font-family:monospace;font-size:12px;line-height:1.6;resize:none;outline:none;tab-size:2"></textarea>
   <div class="form-actions"><button class="btn btn-secondary" onclick="hideSkillModal()">取消</button><button class="btn btn-primary" onclick="saveSkill()">保存</button></div>
 </div></div>
@@ -171,7 +171,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   <div class="form-row"><div class="form-group"><label>模型</label><input type="text" id="setModel" placeholder="claude-sonnet-4-20250514"></div><div class="form-group"><label>最大 Token</label><input type="number" id="setMaxTokens" placeholder="16384"></div></div>
   <div class="form-group"><label>API Key</label><input type="password" id="setApiKey" placeholder="sk-ant-xxxxx 或 sk-xxxxx"><div class="hint" id="setApiKeyHint"></div></div>
   <div class="form-group"><label>Base URL（可选）</label><input type="text" id="setBaseUrl" placeholder="https://api.example.com/v1"><div class="hint">Anthropic 留空；兼容模式填第三方 API 地址</div></div>
-  <div class="form-row"><div class="form-group"><label>Burp 代理</label><input type="text" id="setBurpProxy" placeholder="http://127.0.0.1:8080"></div><div class="form-group"><label>最大并发</label><input type="number" id="setMaxConcurrent" placeholder="3" min="1" max="10"></div></div>
+  <div class="form-row"><div class="form-group"><label>Burp 代理（可选）</label><input type="text" id="setBurpProxy" placeholder="http://127.0.0.1:8080"></div><div class="form-group"><label>最大并发</label><input type="number" id="setMaxConcurrent" placeholder="3" min="1" max="10"></div></div>
   <div class="form-group"><label>Server酱 SendKey（可选）</label><input type="password" id="setServerchanKey" placeholder="SCT..."><div class="hint" id="setServerchanHint">填写后发现漏洞会推送到微信，从 <a href="https://sct.ftqq.com" target="_blank" style="color:var(--accent)">sct.ftqq.com</a> 获取</div></div>
   <div class="form-actions"><button class="btn btn-secondary" onclick="hideSettingsModal()">取消</button><button class="btn btn-primary" onclick="saveSettings()">保存</button></div>
 </div></div>
@@ -308,8 +308,9 @@ async function createSession(){
   const data=await res.json();hideNewModal();selectSession(data.id);
 }
 
-async function showSkillModal(){const res=await fetch(API+'/api/skill');const data=await res.json();document.getElementById('skillEditor').value=data.content;document.getElementById('skillPath').textContent=data.path;document.getElementById('skillModal').classList.add('show');}
+async function showSkillModal(){const res=await fetch(API+'/api/skill');const data=await res.json();document.getElementById('skillEditor').value=data.content;document.getElementById('skillModal').classList.add('show');}
 function hideSkillModal(){document.getElementById('skillModal').classList.remove('show');}
+function loadSkillFile(input){if(!input.files[0])return;const reader=new FileReader();reader.onload=e=>{document.getElementById('skillEditor').value=e.target.result;};reader.readAsText(input.files[0]);input.value='';}
 async function saveSkill(){const content=document.getElementById('skillEditor').value;await fetch(API+'/api/skill',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({content})});hideSkillModal();}
 
 async function showSettingsModal(){const s=await(await fetch(API+'/api/settings')).json();document.getElementById('setProvider').value=s.provider||'anthropic';document.getElementById('setModel').value=s.model||'';document.getElementById('setMaxTokens').value=s.max_tokens||16384;document.getElementById('setApiKey').value='';document.getElementById('setApiKeyHint').textContent=s.api_key?'已配置（输入新值覆盖）':'未配置';document.getElementById('setBaseUrl').value=s.base_url||'';document.getElementById('setBurpProxy').value=s.burp_proxy||'';document.getElementById('setMaxConcurrent').value=s.max_concurrent||3;document.getElementById('setServerchanKey').value='';document.getElementById('setServerchanHint').innerHTML=s.serverchan_key_masked&&s.serverchan_key_masked!=='****'?'已配置（输入新值覆盖）':'填写后发现漏洞会推送到微信，从 <a href="https://sct.ftqq.com" target="_blank" style="color:var(--accent)">sct.ftqq.com</a> 获取';document.getElementById('settingsModal').classList.add('show');}
@@ -332,9 +333,10 @@ function startRenameGroup(oldName){
 const THEME_ICONS={light:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>',dark:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>',system:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>'};
 const THEME_TITLES={light:'浅色 / 点击切换深色',dark:'深色 / 点击跟随系统',system:'跟随系统 / 点击切换浅色'};
 function getStoredTheme(){return localStorage.getItem('vh-theme')||'system';}
-function applyTheme(m){document.documentElement.removeAttribute('data-theme');if(m==='light')document.documentElement.setAttribute('data-theme','light');else if(m==='dark')document.documentElement.setAttribute('data-theme','dark');const b=document.getElementById('themeToggle');b.innerHTML=THEME_ICONS[m];b.title=THEME_TITLES[m];}
+function applyTheme(m){document.documentElement.removeAttribute('data-theme');if(m==='light')document.documentElement.setAttribute('data-theme','light');else if(m==='dark')document.documentElement.setAttribute('data-theme','dark');else if(m==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.setAttribute('data-theme','dark');const b=document.getElementById('themeToggle');if(b){b.innerHTML=THEME_ICONS[m];b.title=THEME_TITLES[m];}}
 function toggleTheme(){const o=['light','dark','system'];const c=getStoredTheme();const n=o[(o.indexOf(c)+1)%3];localStorage.setItem('vh-theme',n);applyTheme(n);}
 applyTheme(getStoredTheme());
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(getStoredTheme()==='system')applyTheme('system');});
 fetchSessions();setInterval(fetchSessions,10000);
 </script>
 </body>

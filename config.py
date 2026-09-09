@@ -10,7 +10,7 @@ REPORTS_DIR = DATA_DIR / "reports"
 TEMP_DIR = DATA_DIR / "temp"
 DB_PATH = DATA_DIR / "vulnhunter.db"
 
-SKILL_DIR = Path(os.getenv("SKILL_DIR", r"E:\Claude\.claude\skills\pentest-ai-driven"))
+SKILL_DIR = Path(os.getenv("SKILL_DIR", str(DATA_DIR / "skill")))
 SKILL_FILE = SKILL_DIR / "SKILL.md"
 KNOWLEDGE_DIR = BASE_DIR / "knowledge"
 
