@@ -1,641 +1,337 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VulnHunter — AI漏洞挖掘系统</title>
+<title>VulnHunter</title>
 <style>
 :root {
-  --bg: #0d1117; --bg2: #161b22; --bg3: #21262d;
-  --fg: #c9d1d9; --fg2: #8b949e; --border: #30363d;
-  --accent: #58a6ff; --green: #3fb950; --red: #f85149;
-  --orange: #d29922; --purple: #bc8cff;
+  --bg: #f5f5f7; --bg2: #ffffff; --bg3: #f0f0f2;
+  --sidebar-bg: rgba(255,255,255,0.72);
+  --text: #1d1d1f; --text2: #86868b; --text3: #aeaeb2;
+  --border: rgba(0,0,0,0.06);
+  --accent: #0071e3; --accent-hover: #0077ed;
+  --danger: #ff3b30; --success: #34c759; --warning: #ff9500;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.04); --shadow-md: 0 4px 14px rgba(0,0,0,0.06); --shadow-lg: 0 12px 40px rgba(0,0,0,0.08);
+  --radius: 12px; --radius-sm: 8px; --radius-xs: 6px;
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
 }
-* { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: 'Cascadia Code','Consolas',monospace; background:var(--bg); color:var(--fg); height:100vh; display:flex; flex-direction:column; }
-header { background:var(--bg2); border-bottom:1px solid var(--border); padding:12px 24px; display:flex; align-items:center; justify-content:space-between; }
-header h1 { font-size:18px; color:var(--accent); }
-header .right { display:flex; gap:12px; align-items:center; }
-header .stats { font-size:13px; color:var(--fg2); }
-.badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
-.badge-p0 { background:#f8514933; color:var(--red); }
-.badge-p1 { background:#d2992233; color:var(--orange); }
-.badge-p2 { background:#58a6ff33; color:var(--accent); }
-.badge-running { background:#3fb95033; color:var(--green); }
-.badge-stopped { background:#f8514933; color:var(--red); }
-.badge-queued { background:#d2992233; color:var(--orange); }
-.badge-vuln_found { background:#3fb95033; color:var(--green); }
-.badge-low_roi { background:var(--bg3); color:var(--fg2); }
-.badge-need_input { background:#bc8cff33; color:var(--purple); }
-.badge-error { background:#f8514933; color:var(--red); }
-main { flex:1; display:flex; overflow:hidden; }
-.sidebar { width:320px; min-width:280px; background:var(--bg2); border-right:1px solid var(--border); display:flex; flex-direction:column; }
-.sidebar-header { padding:12px 16px; border-bottom:1px solid var(--border); }
-.sidebar-header h2 { font-size:14px; margin-bottom:8px; }
-.btn { padding:8px 16px; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-family:inherit; transition:all .15s; }
-.btn-primary { background:var(--accent); color:#fff; }
-.btn-primary:hover { background:#79c0ff; }
-.btn-danger { background:var(--red); color:#fff; }
-.btn-danger:hover { background:#ff7b72; }
-.btn-ghost { background:transparent; border:1px solid var(--border); color:var(--fg2); }
-.btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
-.btn-sm { padding:4px 10px; font-size:12px; }
-.btn-block { width:100%; }
-.session-list { flex:1; overflow-y:auto; }
-.session-item { padding:12px 16px; border-bottom:1px solid var(--border); cursor:pointer; transition:background .1s; position:relative; }
-.session-item:hover { background:var(--bg3); }
-.session-item.active { background:var(--bg3); border-left:3px solid var(--accent); }
-.session-item .target { font-size:13px; font-weight:600; word-break:break-all; padding-right:24px; }
-.session-item .meta { font-size:11px; color:var(--fg2); margin-top:4px; display:flex; justify-content:space-between; align-items:center; }
-.session-item .del-btn { position:absolute; top:8px; right:8px; background:none; border:none; color:var(--fg2); cursor:pointer; font-size:14px; opacity:0; transition:opacity .15s; }
-.session-item:hover .del-btn { opacity:1; }
-.session-item .del-btn:hover { color:var(--red); }
-.content { flex:1; display:flex; flex-direction:column; }
-.content-header { padding:12px 24px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; min-height:52px; }
-.content-header .phase-bar { display:flex; gap:4px; }
-.phase-step { padding:4px 12px; border-radius:4px; font-size:11px; background:var(--bg3); color:var(--fg2); }
-.phase-step.active { background:var(--accent); color:#fff; }
-.phase-step.done { background:#3fb95044; color:var(--green); }
-.panels { flex:1; display:flex; overflow:hidden; }
-.log-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; }
-.log-output { flex:1; overflow-y:auto; padding:16px 24px; font-size:13px; line-height:1.7; white-space:pre-wrap; word-wrap:break-word; }
-.log-output .msg { margin-bottom:8px; }
-.log-output .msg.assistant { color:var(--fg); }
-.log-output .msg.user { color:var(--accent); }
-.log-output .msg.system { color:var(--orange); font-style:italic; }
-.input-bar { padding:12px 24px; border-top:1px solid var(--border); display:flex; gap:8px; }
-.input-bar input { flex:1; background:var(--bg3); border:1px solid var(--border); border-radius:6px; padding:8px 12px; color:var(--fg); font-family:inherit; font-size:13px; outline:none; }
-.input-bar input:focus { border-color:var(--accent); }
-.quick-btns { display:flex; gap:4px; }
-.quick-btns button { padding:4px 8px; font-size:11px; background:var(--bg3); border:1px solid var(--border); border-radius:4px; color:var(--fg2); cursor:pointer; font-family:inherit; }
-.quick-btns button:hover { border-color:var(--accent); color:var(--accent); }
-.findings-panel { width:340px; border-left:1px solid var(--border); overflow-y:auto; display:none; }
-.findings-panel.show { display:block; }
-.findings-panel h3 { padding:12px 16px; font-size:13px; border-bottom:1px solid var(--border); }
-.finding-card { padding:12px 16px; border-bottom:1px solid var(--border); }
-.finding-card .title { font-size:13px; font-weight:600; }
-.finding-card .detail { font-size:11px; color:var(--fg2); margin-top:4px; }
-.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:100; align-items:center; justify-content:center; }
-.modal-overlay.show { display:flex; }
-.modal { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:24px; width:520px; max-width:90vw; max-height:90vh; overflow-y:auto; }
-.modal h2 { font-size:16px; margin-bottom:16px; }
-.form-group { margin-bottom:12px; }
-.form-group label { display:block; font-size:12px; color:var(--fg2); margin-bottom:4px; }
-.form-group input, .form-group textarea, .form-group select {
-  width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:6px;
-  padding:8px 12px; color:var(--fg); font-family:inherit; font-size:13px; outline:none;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#000;--bg2:#1c1c1e;--bg3:#2c2c2e;--sidebar-bg:rgba(28,28,30,0.72);--text:#f5f5f7;--text2:#98989d;--text3:#636366;--border:rgba(255,255,255,0.08);--shadow-sm:0 1px 3px rgba(0,0,0,0.2);--shadow-md:0 4px 14px rgba(0,0,0,0.3);--shadow-lg:0 12px 40px rgba(0,0,0,0.4);
+  }
 }
-.form-group textarea { resize:vertical; min-height:60px; }
-.form-group select { appearance:none; cursor:pointer; }
-.form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color:var(--accent); }
-.form-group .hint { font-size:11px; color:var(--fg2); margin-top:2px; }
-.form-row { display:flex; gap:12px; }
-.form-row .form-group { flex:1; }
-.form-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; }
-.empty { text-align:center; color:var(--fg2); padding:60px 24px; }
-.empty h3 { font-size:16px; margin-bottom:8px; }
-.header-btns { display:flex; gap:8px; align-items:center; }
-::-webkit-scrollbar { width:6px; }
-::-webkit-scrollbar-track { background:var(--bg); }
-::-webkit-scrollbar-thumb { background:var(--bg3); border-radius:3px; }
+[data-theme="dark"]{--bg:#000;--bg2:#1c1c1e;--bg3:#2c2c2e;--sidebar-bg:rgba(28,28,30,0.72);--text:#f5f5f7;--text2:#98989d;--text3:#636366;--border:rgba(255,255,255,0.08);--shadow-sm:0 1px 3px rgba(0,0,0,0.2);--shadow-md:0 4px 14px rgba(0,0,0,0.3);--shadow-lg:0 12px 40px rgba(0,0,0,0.4);}
+[data-theme="light"]{--bg:#f5f5f7;--bg2:#fff;--bg3:#f0f0f2;--sidebar-bg:rgba(255,255,255,0.72);--text:#1d1d1f;--text2:#86868b;--text3:#aeaeb2;--border:rgba(0,0,0,0.06);--shadow-sm:0 1px 3px rgba(0,0,0,0.04);--shadow-md:0 4px 14px rgba(0,0,0,0.06);--shadow-lg:0 12px 40px rgba(0,0,0,0.08);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;}
+.titlebar{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:var(--sidebar-bg);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-bottom:0.5px solid var(--border);flex-shrink:0;z-index:10;}
+.titlebar h1{font-size:15px;font-weight:600;letter-spacing:-0.2px;}
+.titlebar .actions{display:flex;gap:6px;}
+.btn{display:inline-flex;align-items:center;gap:5px;border:none;cursor:pointer;font-family:var(--font);font-size:13px;font-weight:500;border-radius:var(--radius-xs);padding:6px 14px;transition:all 0.15s ease;}
+.btn-primary{background:var(--accent);color:#fff;}.btn-primary:hover{background:var(--accent-hover);}
+.btn-secondary{background:var(--bg3);color:var(--text);}.btn-secondary:hover{background:var(--border);}
+.btn-ghost{background:transparent;color:var(--text2);padding:6px 10px;}.btn-ghost:hover{background:var(--bg3);color:var(--text);}
+.btn-danger{background:transparent;color:var(--danger);}.btn-danger:hover{background:rgba(255,59,48,0.1);}
+.btn-icon{width:32px;height:32px;padding:0;justify-content:center;border-radius:var(--radius-sm);}
+.layout{display:flex;flex:1;overflow:hidden;}
+.sidebar{width:280px;flex-shrink:0;display:flex;flex-direction:column;background:var(--sidebar-bg);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-right:0.5px solid var(--border);}
+.sidebar-top{padding:14px 14px 8px;}
+.search-box{display:flex;align-items:center;gap:6px;background:var(--bg3);border-radius:var(--radius-sm);padding:7px 10px;margin-bottom:8px;}
+.search-box svg{flex-shrink:0;color:var(--text3);}
+.search-box input{flex:1;border:none;background:transparent;color:var(--text);font-size:13px;font-family:var(--font);outline:none;}
+.search-box input::placeholder{color:var(--text3);}
+.filter-row{display:flex;gap:6px;margin-bottom:10px;}
+.filter-select{flex:1;padding:5px 8px;background:var(--bg3);border:none;border-radius:var(--radius-xs);color:var(--text2);font-size:11px;font-family:var(--font);cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='8' height='6' viewBox='0 0 8 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L4 4.5L7 1.5' stroke='%2386868b' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:22px;}
+.session-list{flex:1;overflow-y:auto;padding:0 8px 8px;}.session-list::-webkit-scrollbar{width:0;}
+.group-label{padding:8px 8px 4px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;display:flex;justify-content:space-between;}
+.session-card{padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;margin-bottom:2px;transition:background 0.12s ease;position:relative;}
+.session-card:hover{background:var(--bg3);}.session-card.active{background:var(--accent);}
+.session-card.active .s-target{color:#fff;}.session-card.active .s-meta,.session-card.active .s-badges{color:rgba(255,255,255,0.7);}
+.s-target{font-size:13px;font-weight:500;line-height:1.3;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.s-meta{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px;}
+.s-badges{display:flex;gap:3px;margin-top:4px;flex-wrap:wrap;}
+.sev-dot{font-size:10px;font-weight:600;padding:1px 6px;border-radius:10px;line-height:1.5;}
+.sev-critical{background:rgba(255,59,48,0.12);color:#ff3b30;}.sev-high{background:rgba(255,149,0,0.12);color:#ff9500;}.sev-medium{background:rgba(255,204,0,0.15);color:#c99400;}.sev-low{background:rgba(52,199,89,0.12);color:#34c759;}
+.del-btn{position:absolute;top:8px;right:8px;width:20px;height:20px;border:none;background:transparent;color:var(--text3);cursor:pointer;font-size:14px;border-radius:50%;display:none;align-items:center;justify-content:center;}
+.session-card:hover .del-btn{display:flex;}.session-card.active .del-btn{color:rgba(255,255,255,0.5);}
+.status-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;display:inline-block;}
+.dot-running{background:var(--success);animation:pulse 1.5s infinite;}.dot-stopped{background:var(--text3);}.dot-error{background:var(--danger);}.dot-vuln{background:var(--warning);}.dot-queued{background:var(--text3);}.dot-paused{background:var(--warning);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.content{flex:1;display:flex;flex-direction:column;background:var(--bg);overflow:hidden;}
+.content-header{padding:12px 20px;border-bottom:0.5px solid var(--border);display:none;flex-direction:column;gap:10px;background:var(--bg2);}
+.phase-bar{display:flex;gap:2px;}
+.phase-step{flex:1;text-align:center;padding:6px 0;font-size:11px;font-weight:500;color:var(--text3);background:var(--bg3);border-radius:var(--radius-xs);transition:all 0.2s ease;}
+.phase-step.active{background:var(--accent);color:#fff;}.phase-step.done{background:rgba(0,113,227,0.1);color:var(--accent);}
+.header-actions{display:flex;align-items:center;justify-content:space-between;}
+.header-left{display:flex;align-items:center;gap:8px;}.header-right{display:flex;gap:4px;}
+.log-panel{flex:1;overflow-y:auto;padding:16px 20px;}.log-panel::-webkit-scrollbar{width:6px;}.log-panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+.msg{padding:8px 14px;margin-bottom:6px;border-radius:var(--radius-sm);font-size:13px;line-height:1.6;max-width:85%;white-space:pre-wrap;word-break:break-word;}
+.msg.assistant{background:var(--bg2);box-shadow:var(--shadow-sm);color:var(--text);}.msg.user{background:var(--accent);color:#fff;margin-left:auto;}.msg.system{background:rgba(255,149,0,0.08);color:var(--warning);font-size:12px;text-align:center;max-width:100%;border-radius:var(--radius-xs);}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text3);}
+.empty-state h3{font-size:18px;font-weight:600;margin-bottom:4px;color:var(--text2);}.empty-state p{font-size:13px;}
+.input-bar{padding:12px 20px;border-top:0.5px solid var(--border);display:none;gap:8px;align-items:center;background:var(--bg2);}
+.input-bar input{flex:1;padding:9px 14px;border:1px solid var(--border);border-radius:20px;background:var(--bg);color:var(--text);font-size:13px;font-family:var(--font);outline:none;transition:border-color 0.15s;}
+.input-bar input:focus{border-color:var(--accent);}
+.quick-chips{display:flex;gap:4px;}
+.chip{padding:5px 12px;background:var(--bg3);border:none;border-radius:16px;color:var(--text2);font-size:12px;font-family:var(--font);cursor:pointer;transition:all 0.12s;}.chip:hover{background:var(--border);color:var(--text);}
+.send-btn{width:34px;height:34px;border-radius:50%;border:none;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.15s;flex-shrink:0;}.send-btn:hover{background:var(--accent-hover);}
+.side-panel{position:absolute;top:0;right:-360px;width:360px;height:100%;background:var(--bg2);box-shadow:var(--shadow-lg);z-index:20;transition:right 0.25s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;}
+.side-panel.open{right:0;}
+.panel-header{padding:16px 20px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.panel-header h3{font-size:15px;font-weight:600;}.panel-body{flex:1;overflow-y:auto;padding:16px;}
+.finding-card{padding:12px;border-radius:var(--radius-sm);background:var(--bg);margin-bottom:8px;border:0.5px solid var(--border);}
+.finding-title{font-size:13px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:6px;}.finding-detail{font-size:11px;color:var(--text2);}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.3);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:100;display:none;align-items:center;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--bg2);border-radius:var(--radius);width:460px;max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-lg);padding:28px;}
+.modal h2{font-size:20px;font-weight:700;margin-bottom:20px;letter-spacing:-0.3px;}
+.form-group{margin-bottom:16px;}
+.form-group label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.3px;}
+.form-group input,.form-group textarea,.form-group select{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:14px;font-family:var(--font);outline:none;transition:border-color 0.15s;}
+.form-group input:focus,.form-group textarea:focus{border-color:var(--accent);}
+.form-group textarea{min-height:60px;resize:vertical;}
+.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:24px;}
+.form-row{display:flex;gap:12px;}.form-row .form-group{flex:1;}
+.hint{font-size:11px;color:var(--text3);margin-top:4px;}
+.content-wrap{position:relative;flex:1;display:flex;overflow:hidden;}
+.group-name-input{background:var(--bg3);border:1px solid var(--accent);border-radius:4px;color:var(--text);font-size:11px;font-weight:600;font-family:var(--font);padding:2px 6px;outline:none;width:100%;text-transform:uppercase;letter-spacing:0.5px;}
 </style>
 </head>
 <body>
-
-<header>
+<!-- SPLIT_MARKER_BODY -->
+<div class="titlebar">
   <h1>VulnHunter</h1>
-  <div class="right">
-    <span class="stats" id="globalStats"></span>
-    <button class="btn btn-ghost btn-sm" onclick="showSkillModal()">Skill</button>
-    <button class="btn btn-ghost btn-sm" onclick="showSettingsModal()">Settings</button>
+  <div class="actions">
+    <button class="btn btn-ghost btn-icon" id="themeToggle" onclick="toggleTheme()" title="切换主题"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></button>
+    <button class="btn btn-ghost btn-icon" onclick="showSkillModal()" title="Skill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></button>
+    <button class="btn btn-ghost btn-icon" onclick="showSettingsModal()" title="设置"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
   </div>
-</header>
-
-<main>
+</div>
+<div class="layout">
   <div class="sidebar">
-    <div class="sidebar-header">
-      <h2>测试会话</h2>
-      <input type="text" id="searchInput" placeholder="搜索目标..." style="width:100%;margin:6px 0;padding:6px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--fg);font-size:12px;outline:none;" oninput="fetchSessions()">
-      <div style="display:flex;gap:4px;margin-bottom:6px;">
-        <select id="groupFilter" style="flex:1;padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--fg);font-size:11px;" onchange="fetchSessions()">
-          <option value="">全部分组</option>
-        </select>
-        <select id="sevFilter" style="flex:1;padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--fg);font-size:11px;" onchange="fetchSessions()">
-          <option value="">全部等级</option>
-          <option value="critical">严重</option>
-          <option value="high">高危</option>
-          <option value="medium">中危</option>
-          <option value="low">低危</option>
-        </select>
+    <div class="sidebar-top">
+      <div class="search-box"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input type="text" id="searchInput" placeholder="搜索目标..." oninput="fetchSessions()"></div>
+      <div class="filter-row">
+        <select class="filter-select" id="groupFilter" onchange="fetchSessions()"><option value="">全部分组</option></select>
+        <select class="filter-select" id="sevFilter" onchange="fetchSessions()"><option value="">全部等级</option><option value="严重">严重</option><option value="高危">高危</option><option value="中危">中危</option><option value="低危">低危</option></select>
       </div>
-      <button class="btn btn-primary btn-block" onclick="showNewModal()">+ 新建测试</button>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="showNewModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg> 新建测试</button>
     </div>
-    <div class="session-list" id="sessionList">
-      <div class="empty"><h3>暂无会话</h3><p>点击上方按钮开始</p></div>
-    </div>
+    <div class="session-list" id="sessionList"><div class="empty-state" style="padding:40px 0"><h3>暂无会话</h3><p>点击上方按钮开始</p></div></div>
   </div>
-
   <div class="content">
-    <div class="content-header" id="contentHeader" style="display:none">
+    <div class="content-header" id="contentHeader">
       <div class="phase-bar" id="phaseBar">
-        <span class="phase-step" data-phase="threat_model">1.威胁建模</span>
-        <span class="phase-step" data-phase="strike">2.精准打击</span>
-        <span class="phase-step" data-phase="reflect">3.深挖反思</span>
-        <span class="phase-step" data-phase="bypass">4.Bypass</span>
-        <span class="phase-step" data-phase="deep_verify">5.深度验证</span>
+        <span class="phase-step" data-phase="threat_model">威胁建模</span><span class="phase-step" data-phase="strike">精准打击</span><span class="phase-step" data-phase="reflect">深挖反思</span><span class="phase-step" data-phase="bypass">Bypass</span><span class="phase-step" data-phase="deep_verify">深度验证</span>
       </div>
-      <div class="header-btns">
-        <span id="sessionStatus"></span>
-        <button class="btn btn-ghost btn-sm" onclick="toggleFindings()">漏洞面板</button>
-        <button class="btn btn-ghost btn-sm" onclick="toggleBlackboard()">黑板</button>
-        <button class="btn btn-danger btn-sm" id="stopBtn" onclick="stopCurrent()">停止</button>
-      </div>
-    </div>
-    <div class="panels">
-      <div class="log-panel">
-        <div class="log-output" id="logOutput">
-          <div class="empty"><h3>选择或创建测试会话</h3><p>左侧选择已有会话，或新建测试开始</p></div>
-        </div>
-        <div class="input-bar" id="inputBar" style="display:none">
-          <input type="text" id="userInput" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendMsg()">
-          <div class="quick-btns">
-            <button onclick="quickSend('深入')">深入</button>
-            <button onclick="quickSend('换方向')">换方向</button>
-            <button onclick="quickSend('写报告')">报告</button>
-          </div>
-          <button class="btn btn-primary btn-sm" onclick="sendMsg()">发送</button>
+      <div class="header-actions">
+        <div class="header-left"><span id="sessionStatus"></span><span id="globalStats" style="font-size:11px;color:var(--text3)"></span></div>
+        <div class="header-right">
+          <button class="btn btn-ghost btn-icon" onclick="togglePanel('findings')" title="漏洞面板"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></button>
+          <button class="btn btn-ghost btn-icon" onclick="togglePanel('blackboard')" title="黑板"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></button>
+          <button class="btn btn-ghost btn-icon" onclick="exportReport()" title="导出报告"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg></button>
+          <button class="btn btn-ghost btn-icon" id="pauseBtn" onclick="pauseCurrent()" title="暂停" style="color:var(--warning);display:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg></button>
+          <button class="btn btn-ghost btn-icon" id="resumeBtn" onclick="resumeCurrent()" title="继续" style="color:var(--success);display:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+          <button class="btn btn-danger btn-icon" id="stopBtn" onclick="stopCurrent()" title="终止" style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></button>
         </div>
       </div>
-      <div class="findings-panel" id="findingsPanel">
-        <h3>发现的漏洞 (<span id="findingsCount">0</span>)</h3>
-        <div id="findingsList"></div>
-      </div>
-      <div class="findings-panel" id="blackboardPanel">
-        <h3>黑板状态</h3>
-        <div id="bbSummary" style="padding:12px 16px;font-size:12px;"></div>
-        <div id="bbDetails" style="padding:0 16px;font-size:12px;"></div>
-      </div>
     </div>
-  </div>
-</main>
-
-<!-- New Session Modal -->
-<div class="modal-overlay" id="newModal">
-  <div class="modal">
-    <h2>新建渗透测试</h2>
-    <div class="form-group">
-      <label>目标 URL *</label>
-      <input type="text" id="inputTarget" placeholder="https://example.com">
+    <div class="content-wrap">
+      <div class="log-panel" id="logOutput"><div class="empty-state"><h3>选择或创建测试会话</h3><p>开始你的安全测试之旅</p></div></div>
+      <div class="side-panel" id="findingsPanel"><div class="panel-header"><h3>漏洞 (<span id="findingsCount">0</span>)</h3><button class="btn btn-ghost btn-icon" onclick="togglePanel('findings')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div class="panel-body" id="findingsList"></div></div>
+      <div class="side-panel" id="blackboardPanel"><div class="panel-header"><h3>黑板状态</h3><button class="btn btn-ghost btn-icon" onclick="togglePanel('blackboard')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div class="panel-body"><div id="bbSummary"></div><div id="bbDetails"></div></div></div>
     </div>
-    <div class="form-group">
-      <label>Cookie (账号A)</label>
-      <textarea id="inputCookie" placeholder="登录后的Cookie"></textarea>
-    </div>
-    <div class="form-group">
-      <label>Cookie (账号B，用于IDOR对比)</label>
-      <textarea id="inputCookieB" placeholder="第二个账号的Cookie（可选）"></textarea>
-    </div>
-    <div class="form-group">
-      <label>备注</label>
-      <input type="text" id="inputNotes" placeholder="业务类型、禁测路径等">
-    </div>
-    <div class="form-group">
-      <label>分组（可选，如"XX平台"）</label>
-      <input type="text" id="inputGroup" placeholder="输入或选择分组名" list="groupSuggestions">
-      <datalist id="groupSuggestions"></datalist>
-    </div>
-    <div class="form-actions">
-      <button class="btn btn-ghost" onclick="hideNewModal()">取消</button>
-      <button class="btn btn-primary" onclick="createSession()">开始测试</button>
+    <div class="input-bar" id="inputBar">
+      <input type="text" id="userInput" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendMsg()">
+      <div class="quick-chips"><button class="chip" onclick="quickSend('深入')">深入</button><button class="chip" onclick="quickSend('换方向')">换方向</button><button class="chip" onclick="quickSend('写报告')">报告</button></div>
+      <button class="send-btn" onclick="sendMsg()"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
     </div>
   </div>
 </div>
-
-<!-- Skill Editor Modal -->
-<div class="modal-overlay" id="skillModal">
-  <div class="modal" style="width:720px;height:80vh;display:flex;flex-direction:column">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <h2>Skill 编辑器</h2>
-      <span id="skillPath" style="font-size:11px;color:var(--fg2)"></span>
-    </div>
-    <textarea id="skillEditor" style="flex:1;width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;color:var(--fg);font-family:inherit;font-size:12px;line-height:1.6;resize:none;outline:none;tab-size:2"></textarea>
-    <div class="form-actions">
-      <button class="btn btn-ghost" onclick="hideSkillModal()">取消</button>
-      <button class="btn btn-primary" onclick="saveSkill()">保存</button>
-    </div>
-  </div>
-</div>
-
-<!-- Settings Modal -->
-<div class="modal-overlay" id="settingsModal">
-  <div class="modal">
-    <h2>模型与系统设置</h2>
-    <div class="form-group">
-      <label>LLM Provider</label>
-      <select id="setProvider">
-        <option value="anthropic">Anthropic (Claude)</option>
-        <option value="openai">OpenAI / 兼容API</option>
-      </select>
-      <div class="hint">选择 OpenAI 兼容模式可接入 DeepSeek、Qwen、GLM 等本地或第三方模型</div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Model</label>
-        <input type="text" id="setModel" placeholder="claude-sonnet-4-20250514">
-      </div>
-      <div class="form-group">
-        <label>Max Tokens</label>
-        <input type="number" id="setMaxTokens" placeholder="16384">
-      </div>
-    </div>
-    <div class="form-group">
-      <label>API Key</label>
-      <input type="password" id="setApiKey" placeholder="sk-ant-xxxxx 或 sk-xxxxx">
-      <div class="hint" id="setApiKeyHint"></div>
-    </div>
-    <div class="form-group">
-      <label>Base URL（可选，留空用默认）</label>
-      <input type="text" id="setBaseUrl" placeholder="https://api.example.com/v1">
-      <div class="hint">Anthropic 默认留空；OpenAI 兼容模式填第三方 API 地址</div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Burp 代理</label>
-        <input type="text" id="setBurpProxy" placeholder="http://127.0.0.1:8080">
-      </div>
-      <div class="form-group">
-        <label>最大并发</label>
-        <input type="number" id="setMaxConcurrent" placeholder="3" min="1" max="10">
-      </div>
-    </div>
-    <div class="form-actions">
-      <button class="btn btn-ghost" onclick="hideSettingsModal()">取消</button>
-      <button class="btn btn-primary" onclick="saveSettings()">保存</button>
-    </div>
-  </div>
-</div>
-
+<!-- SPLIT_MARKER_MODALS -->
+<div class="modal-overlay" id="newModal"><div class="modal">
+  <h2>新建渗透测试</h2>
+  <div class="form-group"><label>目标 URL</label><input type="text" id="inputTarget" placeholder="https://example.com"></div>
+  <div class="form-group"><label>Cookie（账号A）</label><textarea id="inputCookie" placeholder="登录后的 Cookie"></textarea></div>
+  <div class="form-group"><label>Cookie（账号B · IDOR对比）</label><textarea id="inputCookieB" placeholder="第二个账号的 Cookie（可选）"></textarea></div>
+  <div class="form-group"><label>备注</label><input type="text" id="inputNotes" placeholder="业务类型、禁测路径等"></div>
+  <div class="form-group"><label>分组</label><input type="text" id="inputGroup" placeholder="如：某某平台" list="groupSuggestions"><datalist id="groupSuggestions"></datalist></div>
+  <div class="form-actions"><button class="btn btn-secondary" onclick="hideNewModal()">取消</button><button class="btn btn-primary" onclick="createSession()">开始测试</button></div>
+</div></div>
+<div class="modal-overlay" id="skillModal"><div class="modal" style="width:720px;height:80vh;display:flex;flex-direction:column">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2>Skill 编辑器</h2><span id="skillPath" style="font-size:11px;color:var(--text3)"></span></div>
+  <textarea id="skillEditor" style="flex:1;width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;color:var(--text);font-family:monospace;font-size:12px;line-height:1.6;resize:none;outline:none;tab-size:2"></textarea>
+  <div class="form-actions"><button class="btn btn-secondary" onclick="hideSkillModal()">取消</button><button class="btn btn-primary" onclick="saveSkill()">保存</button></div>
+</div></div>
+<div class="modal-overlay" id="settingsModal"><div class="modal">
+  <h2>设置</h2>
+  <div class="form-group"><label>模型提供商</label><select id="setProvider"><option value="anthropic">Anthropic (Claude)</option><option value="openai">OpenAI / 兼容 API</option></select><div class="hint">选择兼容模式可接入 DeepSeek、通义千问、智谱 GLM 等</div></div>
+  <div class="form-row"><div class="form-group"><label>模型</label><input type="text" id="setModel" placeholder="claude-sonnet-4-20250514"></div><div class="form-group"><label>最大 Token</label><input type="number" id="setMaxTokens" placeholder="16384"></div></div>
+  <div class="form-group"><label>API Key</label><input type="password" id="setApiKey" placeholder="sk-ant-xxxxx 或 sk-xxxxx"><div class="hint" id="setApiKeyHint"></div></div>
+  <div class="form-group"><label>Base URL（可选）</label><input type="text" id="setBaseUrl" placeholder="https://api.example.com/v1"><div class="hint">Anthropic 留空；兼容模式填第三方 API 地址</div></div>
+  <div class="form-row"><div class="form-group"><label>Burp 代理</label><input type="text" id="setBurpProxy" placeholder="http://127.0.0.1:8080"></div><div class="form-group"><label>最大并发</label><input type="number" id="setMaxConcurrent" placeholder="3" min="1" max="10"></div></div>
+  <div class="form-actions"><button class="btn btn-secondary" onclick="hideSettingsModal()">取消</button><button class="btn btn-primary" onclick="saveSettings()">保存</button></div>
+</div></div>
+<!-- SPLIT_MARKER_SCRIPT -->
 <script>
-const API = '';
-let currentSid = null;
-let ws = null;
-const PHASES = ['threat_model','strike','reflect','bypass','deep_verify'];
+const API='';
+let currentSid=null, ws=null, isPaused=false, streamBuffer=null;
+const PHASES=['threat_model','strike','reflect','bypass','deep_verify'];
+function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
+function sevClass(sev){const s=(sev||'').toLowerCase();if(s.includes('严重')||s.includes('critical')||s.includes('p0'))return'critical';if(s.includes('高')||s.includes('high')||s.includes('p1'))return'high';if(s.includes('中')||s.includes('medium')||s.includes('p2'))return'medium';return'low';}
+function statusDot(st){const c={running:'running',queued:'queued',stopped:'stopped',error:'error',vuln_found:'vuln',low_roi:'stopped',need_input:'running',paused:'paused'}[st]||'stopped';return`<span class="status-dot dot-${c}"></span>`;}
+function statusText(s){return{queued:'排队中',running:'测试中',vuln_found:'发现漏洞',low_roi:'无高价值发现',need_input:'等待输入',error:'异常',stopped:'已停止',paused:'已暂停'}[s]||s;}
 
-async function fetchSessions() {
-  const search = (document.getElementById('searchInput')?.value || '').trim();
-  const group = document.getElementById('groupFilter')?.value || '';
-  const sevFilter = document.getElementById('sevFilter')?.value || '';
-  let url = API+'/api/sessions?';
-  if (search) url += 'search='+encodeURIComponent(search)+'&';
-  if (group) url += 'group='+encodeURIComponent(group)+'&';
-  const res = await fetch(url);
-  let list = await res.json();
-  if (sevFilter) {
-    list = list.filter(s => {
-      const sum = s.severity_summary || {};
-      return Object.keys(sum).some(k => k.toLowerCase().includes(sevFilter));
-    });
-  }
-  const el = document.getElementById('sessionList');
-  if (!list.length) {
-    el.innerHTML = '<div class="empty"><h3>暂无会话</h3><p>点击上方按钮开始</p></div>';
-    updateGlobalStats([]);
-    return;
-  }
-  const groups = {};
-  list.forEach(s => { const g = s.group_name || '未分组'; (groups[g]=groups[g]||[]).push(s); });
-  let html = '';
-  for (const [gname, items] of Object.entries(groups)) {
-    if (Object.keys(groups).length > 1 || gname !== '未分组') {
-      html += `<div style="padding:6px 12px;font-size:11px;font-weight:bold;color:var(--accent);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">${esc(gname)} <span style="font-weight:normal;color:var(--fg2)">${items.length}</span></div>`;
-    }
-    html += items.map(s => {
-      const sum = s.severity_summary || {};
-      const badges = Object.entries(sum).map(([sev,cnt]) => {
-        const c = sevColor(sev);
-        return `<span style="background:${c}22;color:${c};padding:1px 4px;border-radius:3px;font-size:10px;margin-right:2px;">${sev}:${cnt}</span>`;
-      }).join('');
-      return `
-      <div class="session-item ${s.id===currentSid?'active':''}" onclick="selectSession(${s.id})">
-        <button class="del-btn" onclick="event.stopPropagation();deleteSession(${s.id})" title="删除">&times;</button>
-        <div class="target">${esc(s.target)}</div>
-        <div class="meta">
-          <span class="badge badge-${s.status}">${statusText(s.status)}</span>
-          <span>${s.findings_count} 漏洞 · ${s.turns} 轮</span>
-        </div>
-        ${badges ? '<div style="padding:2px 0 0">'+badges+'</div>' : ''}
-      </div>`;
+async function fetchSessions(){
+  const search=(document.getElementById('searchInput')?.value||'').trim();
+  const group=document.getElementById('groupFilter')?.value||'';
+  const sf=document.getElementById('sevFilter')?.value||'';
+  let url=API+'/api/sessions?';
+  if(search)url+='search='+encodeURIComponent(search)+'&';
+  if(group)url+='group='+encodeURIComponent(group)+'&';
+  const res=await fetch(url);let list=await res.json();
+  if(sf)list=list.filter(s=>{const sum=s.severity_summary||{};return Object.keys(sum).some(k=>k.includes(sf));});
+  const el=document.getElementById('sessionList');
+  if(!list.length){el.innerHTML='<div class="empty-state" style="padding:40px 0"><h3>暂无会话</h3><p>点击上方按钮开始</p></div>';updateGlobalStats([]);return;}
+  const groups={};list.forEach(s=>{const g=s.group_name||'未分组';(groups[g]=groups[g]||[]).push(s);});
+  let html='';
+  for(const[gname,items]of Object.entries(groups)){
+    html+=`<div class="group-label"><span class="group-name" id="gn-${esc(gname)}">${esc(gname)}</span><span style="display:flex;align-items:center;gap:6px;"><button class="btn btn-ghost btn-icon" style="width:20px;height:20px;padding:0;" onclick="startRenameGroup('${esc(gname)}')" title="重命名"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><span style="color:var(--text3);font-weight:normal">${items.length}</span></span></div>`;
+    html+=items.map(s=>{
+      const sum=s.severity_summary||{};const badges=Object.entries(sum).map(([sev,cnt])=>`<span class="sev-dot sev-${sevClass(sev)}">${sev} ${cnt}</span>`).join('');
+      return`<div class="session-card ${s.id===currentSid?'active':''}" onclick="selectSession(${s.id})"><button class="del-btn" onclick="event.stopPropagation();deleteSession(${s.id})">&times;</button><div class="s-target">${esc(s.target)}</div><div class="s-meta">${statusDot(s.status)} ${statusText(s.status)} · ${s.turns}轮</div>${badges?'<div class="s-badges">'+badges+'</div>':''}</div>`;
     }).join('');
   }
-  el.innerHTML = html;
-  updateGlobalStats(list);
-  loadGroups();
+  el.innerHTML=html;updateGlobalStats(list);loadGroups();
 }
-
-function sevColor(sev) {
-  const s = (sev||'').toLowerCase();
-  if (s.includes('critical')||s.includes('严重')||s.includes('p0')) return '#ff4444';
-  if (s.includes('high')||s.includes('高')||s.includes('p1')) return '#ff8800';
-  if (s.includes('medium')||s.includes('中')||s.includes('p2')) return '#ffcc00';
-  return '#88cc88';
+function updateGlobalStats(list){
+  const running=list.filter(s=>s.status==='running').length;const vulns=list.reduce((a,s)=>a+s.findings_count,0);
+  const allSev={};list.forEach(s=>{for(const[k,v]of Object.entries(s.severity_summary||{})){allSev[k]=(allSev[k]||0)+v;}});
+  const ss=Object.entries(allSev).map(([k,v])=>k+':'+v).join(' ');
+  document.getElementById('globalStats').textContent=`测试中:${running} | 漏洞:${vulns}${ss?' ('+ss+')':''} | 会话:${list.length}`;
 }
+async function loadGroups(){try{const g=await(await fetch(API+'/api/groups')).json();const sel=document.getElementById('groupFilter');const cur=sel.value;sel.innerHTML='<option value="">全部分组</option>'+g.map(x=>`<option value="${esc(x)}"${x===cur?' selected':''}>${esc(x)}</option>`).join('');const dl=document.getElementById('groupSuggestions');if(dl)dl.innerHTML=g.map(x=>`<option value="${esc(x)}">`).join('');}catch(e){}}
 
-async function loadGroups() {
-  try {
-    const groups = await (await fetch(API+'/api/groups')).json();
-    const sel = document.getElementById('groupFilter');
-    const cur = sel.value;
-    sel.innerHTML = '<option value="">全部分组</option>' + groups.map(g => `<option value="${esc(g)}" ${g===cur?'selected':''}>${esc(g)}</option>`).join('');
-    const dl = document.getElementById('groupSuggestions');
-    if (dl) dl.innerHTML = groups.map(g => `<option value="${esc(g)}">`).join('');
-  } catch(e) {}
-}
-
-function updateGlobalStats(list) {
-  const running = list.filter(s=>s.status==='running').length;
-  const vulns = list.reduce((a,s)=>a+s.findings_count,0);
-  const allSev = {};
-  list.forEach(s => { for (const [k,v] of Object.entries(s.severity_summary||{})) { allSev[k]=(allSev[k]||0)+v; } });
-  const sevStr = Object.entries(allSev).map(([k,v])=>k+':'+v).join(' ');
-  document.getElementById('globalStats').textContent = `运行:${running} | 漏洞:${vulns} ${sevStr ? '('+sevStr+')' : ''} | 会话:${list.length}`;
-}
-
-function statusText(s) {
-  return {queued:'排队中',running:'运行中',vuln_found:'发现漏洞',low_roi:'无高价值发现',
-          need_input:'等待输入',error:'错误',stopped:'已停止'}[s]||s;
-}
-
-function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
-
-function showNewModal() { document.getElementById('newModal').classList.add('show'); document.getElementById('inputTarget').focus(); }
-function hideNewModal() { document.getElementById('newModal').classList.remove('show'); }
-
-async function createSession() {
-  const target = document.getElementById('inputTarget').value.trim();
-  if (!target) return alert('请输入目标URL');
-  const body = {
-    target,
-    cookie: document.getElementById('inputCookie').value.trim(),
-    cookie_b: document.getElementById('inputCookieB').value.trim(),
-    scope_notes: document.getElementById('inputNotes').value.trim(),
-    group_name: (document.getElementById('inputGroup')?.value || '').trim(),
-  };
-  const res = await fetch(API+'/api/sessions', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
-  const data = await res.json();
-  hideNewModal();
-  document.getElementById('inputTarget').value='';
-  document.getElementById('inputCookie').value='';
-  document.getElementById('inputCookieB').value='';
-  document.getElementById('inputNotes').value='';
-  await fetchSessions();
-  selectSession(data.id);
-}
-
-async function deleteSession(sid) {
-  if (!confirm('确认删除此会话？所有日志和发现将被清除。')) return;
-  await fetch(API+`/api/sessions/${sid}`, {method:'DELETE'});
-  if (currentSid === sid) {
-    currentSid = null;
-    if (ws) { ws.close(); ws=null; }
-    document.getElementById('contentHeader').style.display='none';
-    document.getElementById('inputBar').style.display='none';
-    document.getElementById('logOutput').innerHTML='<div class="empty"><h3>选择或创建测试会话</h3></div>';
-  }
-  fetchSessions();
-}
-
-async function selectSession(sid) {
-  currentSid = sid;
-  if (ws) { ws.close(); ws=null; }
+async function selectSession(sid){
+  currentSid=sid;if(ws){ws.close();ws=null;}
   document.getElementById('contentHeader').style.display='flex';
   document.getElementById('inputBar').style.display='flex';
   document.getElementById('logOutput').innerHTML='';
   document.getElementById('findingsList').innerHTML='';
   document.getElementById('findingsCount').textContent='0';
-  updatePhaseBar('threat_model');
   fetchSessions();
-
-  const session = await (await fetch(API+`/api/sessions/${sid}`)).json();
-  updateSessionUI(session);
-
-  const logs = await (await fetch(API+`/api/sessions/${sid}/logs`)).json();
-  logs.forEach(l => appendLog(l.role, l.content));
-  document.getElementById('logOutput').scrollTop = document.getElementById('logOutput').scrollHeight;
-
-  const findings = await (await fetch(API+`/api/sessions/${sid}/findings`)).json();
-  findings.forEach(addFindingCard);
-
+  const session=await(await fetch(API+`/api/sessions/${sid}`)).json();
+  updatePhaseBar(session.phase||'threat_model');
+  isPaused=session.status==='paused';
+  updateControlBtns(session.status);
+  document.getElementById('sessionStatus').innerHTML=`${statusDot(session.status)} <span style="font-size:12px;color:var(--text2)">${statusText(session.status)}</span>`;
+  const logs=await(await fetch(API+`/api/sessions/${sid}/logs`)).json();
+  logs.forEach(l=>appendLog(l.role,l.content));
+  document.getElementById('logOutput').scrollTop=document.getElementById('logOutput').scrollHeight;
+  const findings=await(await fetch(API+`/api/sessions/${sid}/findings`)).json();
+  findings.forEach(f=>addFindingCard(f));
   connectWS(sid);
 }
-
-function connectWS(sid) {
-  const proto = location.protocol==='https:'?'wss':'ws';
-  ws = new WebSocket(`${proto}://${location.host}/ws/${sid}`);
-  ws.onmessage = (e) => {
-    const msg = JSON.parse(e.data);
-    if (msg.type === 'ping') return;
-    switch(msg.type) {
-      case 'stream': appendStream(msg.data.text); break;
-      case 'phase': updatePhaseBar(msg.data.phase); refreshBlackboard(); break;
-      case 'status': updateStatus(msg.data.status); break;
-      case 'finding': addFindingCard(msg.data); refreshBlackboard(); break;
-      case 'error': appendLog('system', 'Error: '+msg.data.message); break;
-      case 'done': fetchSessions(); refreshBlackboard(); break;
-    }
-  };
-  ws.onclose = () => { setTimeout(()=>{ if(currentSid===sid) connectWS(sid); }, 3000); };
-}
-
-let streamBuffer = null;
-function appendStream(text) {
-  const out = document.getElementById('logOutput');
-  if (!streamBuffer) {
-    streamBuffer = document.createElement('div');
-    streamBuffer.className = 'msg assistant';
-    out.appendChild(streamBuffer);
-  }
-  streamBuffer.textContent += text;
-  out.scrollTop = out.scrollHeight;
-}
-
-function appendLog(role, content) {
-  streamBuffer = null;
-  const out = document.getElementById('logOutput');
-  const div = document.createElement('div');
-  div.className = 'msg '+role;
-  if (role==='user') div.textContent = '> '+content;
-  else div.textContent = content;
-  out.appendChild(div);
-  out.scrollTop = out.scrollHeight;
-}
-
-function updatePhaseBar(phase) {
-  const steps = document.querySelectorAll('.phase-step');
-  const idx = PHASES.indexOf(phase);
-  steps.forEach((s,i) => {
-    s.classList.remove('active','done');
-    if (i<idx) s.classList.add('done');
-    else if (i===idx) s.classList.add('active');
-  });
-}
-
-function updateStatus(status) {
-  const el = document.getElementById('sessionStatus');
-  el.innerHTML = `<span class="badge badge-${status}">${statusText(status)}</span>`;
+async function deleteSession(sid){
+  if(!confirm('确认删除此会话？'))return;
+  await fetch(API+`/api/sessions/${sid}`,{method:'DELETE'});
+  if(currentSid===sid){currentSid=null;if(ws){ws.close();ws=null;}document.getElementById('contentHeader').style.display='none';document.getElementById('inputBar').style.display='none';document.getElementById('logOutput').innerHTML='<div class="empty-state"><h3>选择或创建测试会话</h3><p>开始你的安全测试之旅</p></div>';}
   fetchSessions();
 }
 
-function updateSessionUI(session) {
-  updateStatus(session.status);
-  if (session.phase) updatePhaseBar(session.phase);
-}
-
-function addFindingCard(f) {
-  const el = document.getElementById('findingsList');
-  const cnt = document.getElementById('findingsCount');
-  const card = document.createElement('div');
-  card.className = 'finding-card';
-  const sev = (f.severity||'').toLowerCase();
-  const sevClass = sev.startsWith('p0')?'p0':sev.startsWith('p1')?'p1':'p2';
-  card.innerHTML = `
-    <div class="title"><span class="badge badge-${sevClass}">${esc(f.severity)}</span> ${esc(f.title)}</div>
-    <div class="detail">${esc(f.vuln_type)} · ${esc(f.endpoint||'')}</div>
-  `;
-  el.prepend(card);
-  cnt.textContent = el.children.length;
-  document.getElementById('findingsPanel').classList.add('show');
-}
-
-function toggleFindings() {
-  document.getElementById('findingsPanel').classList.toggle('show');
-  document.getElementById('blackboardPanel').classList.remove('show');
-}
-
-function toggleBlackboard() {
-  const panel = document.getElementById('blackboardPanel');
-  panel.classList.toggle('show');
-  document.getElementById('findingsPanel').classList.remove('show');
-  if (panel.classList.contains('show') && currentSid) refreshBlackboard();
-}
-
-async function refreshBlackboard() {
-  if (!currentSid) return;
-  try {
-    const summary = await (await fetch(API+`/api/sessions/${currentSid}/blackboard/summary`)).json();
-    const labels = {attack_surfaces:'攻击面', verified_findings:'已验证', pending_hypotheses:'待验证', exploits:'利用原语', failure_records:'失败记录'};
-    const colors = {attack_surfaces:'var(--accent)', verified_findings:'var(--green)', pending_hypotheses:'var(--orange)', exploits:'var(--purple)', failure_records:'var(--red)'};
-    let html = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">';
-    for (const [k,v] of Object.entries(summary)) {
-      html += `<div style="background:var(--bg3);padding:6px 10px;border-radius:6px;border-left:3px solid ${colors[k]||'var(--border)'}"><div style="font-size:10px;color:var(--fg2)">${labels[k]||k}</div><div style="font-size:18px;font-weight:bold;color:${colors[k]}">${v}</div></div>`;
+function connectWS(sid){
+  const proto=location.protocol==='https:'?'wss:':'ws:';
+  ws=new WebSocket(`${proto}//${location.host}/ws/${sid}`);
+  ws.onmessage=e=>{
+    const msg=JSON.parse(e.data);if(msg.type==='ping')return;
+    switch(msg.type){
+      case'stream':appendStream(msg.data.text);break;
+      case'phase':updatePhaseBar(msg.data.phase);refreshBlackboard();break;
+      case'status':updateStatus(msg.data.status);break;
+      case'finding':addFindingCard(msg.data);refreshBlackboard();break;
+      case'error':appendLog('system','错误: '+msg.data.message);break;
+      case'done':fetchSessions();refreshBlackboard();break;
     }
-    html += '</div>';
-    document.getElementById('bbSummary').innerHTML = html;
-
-    const entries = await (await fetch(API+`/api/sessions/${currentSid}/blackboard`)).json();
-    let details = '';
-    const grouped = {};
-    for (const e of entries) { (grouped[e.partition] = grouped[e.partition] || []).push(e); }
-    for (const [part, items] of Object.entries(grouped)) {
-      details += `<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:bold;color:${colors[part]||'var(--fg2)'};margin-bottom:4px">${labels[part]||part} (${items.length})</div>`;
-      for (const item of items.slice(0, 20)) {
-        const statusIcon = item.status === 'done' ? '✓' : item.status === 'failed' ? '✗' : '•';
-        details += `<div style="padding:3px 0;border-bottom:1px solid var(--border);font-size:11px;color:var(--fg2)"><span>${statusIcon}</span> <span style="color:var(--fg)">${item.key}</span>${item.value ? ' — '+item.value.substring(0,60) : ''}</div>`;
-      }
-      details += '</div>';
-    }
-    document.getElementById('bbDetails').innerHTML = details || '<div style="color:var(--fg2)">黑板为空</div>';
-  } catch(e) { console.error('blackboard error', e); }
-}
-
-async function sendMsg() {
-  const input = document.getElementById('userInput');
-  const msg = input.value.trim();
-  if (!msg || !currentSid) return;
-  input.value = '';
-  appendLog('user', msg);
-  streamBuffer = null;
-  await fetch(API+`/api/sessions/${currentSid}/input`, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({message:msg})
-  });
-}
-
-function quickSend(msg) {
-  if (!currentSid) return;
-  appendLog('user', msg);
-  streamBuffer = null;
-  fetch(API+`/api/sessions/${currentSid}/input`, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({message:msg})
-  });
-}
-
-async function stopCurrent() {
-  if (!currentSid) return;
-  if (!confirm('确认停止当前测试？')) return;
-  await fetch(API+`/api/sessions/${currentSid}/stop`, {method:'POST'});
-  fetchSessions();
-}
-
-// --- Settings ---
-async function showSettingsModal() {
-  document.getElementById('settingsModal').classList.add('show');
-  const res = await fetch(API+'/api/settings');
-  const s = await res.json();
-  document.getElementById('setProvider').value = s.provider || 'anthropic';
-  document.getElementById('setModel').value = s.model || '';
-  document.getElementById('setMaxTokens').value = s.max_tokens || 16384;
-  document.getElementById('setApiKey').value = '';
-  document.getElementById('setApiKeyHint').textContent = s.api_key_masked ? `当前: ${s.api_key_masked}` : '未设置';
-  document.getElementById('setBaseUrl').value = s.base_url || '';
-  document.getElementById('setBurpProxy').value = s.burp_proxy || 'http://127.0.0.1:8080';
-  document.getElementById('setMaxConcurrent').value = s.max_concurrent || 3;
-}
-function hideSettingsModal() { document.getElementById('settingsModal').classList.remove('show'); }
-
-async function saveSettings() {
-  const body = {
-    provider: document.getElementById('setProvider').value,
-    model: document.getElementById('setModel').value.trim(),
-    max_tokens: parseInt(document.getElementById('setMaxTokens').value) || 16384,
-    base_url: document.getElementById('setBaseUrl').value.trim(),
-    burp_proxy: document.getElementById('setBurpProxy').value.trim(),
-    max_concurrent: parseInt(document.getElementById('setMaxConcurrent').value) || 3,
   };
-  const apiKey = document.getElementById('setApiKey').value.trim();
-  if (apiKey) body.api_key = apiKey;
-  await fetch(API+'/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
-  hideSettingsModal();
+  ws.onclose=()=>{setTimeout(()=>{if(currentSid===sid)connectWS(sid);},3000);};
+}
+function appendStream(text){const out=document.getElementById('logOutput');if(!streamBuffer){streamBuffer=document.createElement('div');streamBuffer.className='msg assistant';out.appendChild(streamBuffer);}streamBuffer.textContent+=text;out.scrollTop=out.scrollHeight;}
+function appendLog(role,content){streamBuffer=null;const out=document.getElementById('logOutput');const div=document.createElement('div');div.className='msg '+role;div.textContent=role==='user'?'> '+content:content;out.appendChild(div);out.scrollTop=out.scrollHeight;}
+function updatePhaseBar(phase){const steps=document.querySelectorAll('.phase-step');const idx=PHASES.indexOf(phase);steps.forEach((s,i)=>{s.classList.remove('active','done');if(i<idx)s.classList.add('done');else if(i===idx)s.classList.add('active');});}
+function updateStatus(status){document.getElementById('sessionStatus').innerHTML=`${statusDot(status)} <span style="font-size:12px;color:var(--text2)">${statusText(status)}</span>`;isPaused=status==='paused';updateControlBtns(status);fetchSessions();}
+function addFindingCard(f){const el=document.getElementById('findingsList');const cnt=document.getElementById('findingsCount');const card=document.createElement('div');card.className='finding-card';const sc=sevClass(f.severity);card.innerHTML=`<div class="finding-title"><span class="sev-dot sev-${sc}">${esc(f.severity)}</span> ${esc(f.title)}</div><div class="finding-detail">${esc(f.vuln_type)} · ${esc(f.endpoint||'')} ${f.verified?'· 已验证':'· 待验证'}</div>`;el.prepend(card);cnt.textContent=el.children.length;}
+
+function updateControlBtns(status){
+  const p=document.getElementById('pauseBtn'),r=document.getElementById('resumeBtn'),s=document.getElementById('stopBtn');
+  if(status==='running'){p.style.display='';r.style.display='none';s.style.display='';}
+  else if(status==='paused'){p.style.display='none';r.style.display='';s.style.display='';}
+  else{p.style.display='none';r.style.display='none';s.style.display='none';}
+}
+async function pauseCurrent(){if(!currentSid)return;await fetch(API+`/api/sessions/${currentSid}/pause`,{method:'POST'});}
+async function resumeCurrent(){if(!currentSid)return;await fetch(API+`/api/sessions/${currentSid}/resume`,{method:'POST'});}
+async function stopCurrent(){if(!currentSid)return;await fetch(API+`/api/sessions/${currentSid}/stop`,{method:'POST'});}
+function exportReport(){if(currentSid)window.open(API+`/api/sessions/${currentSid}/report`);}
+
+function togglePanel(name){const panels={findings:'findingsPanel',blackboard:'blackboardPanel'};const el=document.getElementById(panels[name]);if(!el)return;const isOpen=el.classList.contains('open');document.querySelectorAll('.side-panel').forEach(p=>p.classList.remove('open'));if(!isOpen)el.classList.add('open');}
+
+async function refreshBlackboard(){
+  if(!currentSid)return;try{
+    const summary=await(await fetch(API+`/api/sessions/${currentSid}/blackboard/summary`)).json();
+    const labels={attack_surfaces:'攻击面',verified_findings:'已验证',pending_hypotheses:'待验证',exploits:'利用原语',failure_records:'失败记录'};
+    const colors={attack_surfaces:'var(--accent)',verified_findings:'var(--success)',pending_hypotheses:'var(--warning)',exploits:'var(--danger)',failure_records:'var(--text3)'};
+    document.getElementById('bbSummary').innerHTML=Object.entries(summary).map(([k,v])=>`<span style="display:inline-block;margin:0 8px 4px 0;font-size:12px;"><span style="color:${colors[k]||'var(--text2)'};font-weight:600">${labels[k]||k}</span> ${v}</span>`).join('');
+    const entries=await(await fetch(API+`/api/sessions/${currentSid}/blackboard`)).json();
+    const grouped={};for(const e of entries){(grouped[e.partition]=grouped[e.partition]||[]).push(e);}
+    let details='';
+    for(const[part,items]of Object.entries(grouped)){
+      details+=`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:bold;color:${colors[part]||'var(--text2)'};margin-bottom:4px">${labels[part]||part} (${items.length})</div>`;
+      for(const item of items.slice(0,20)){const si=item.status==='done'?'✓':item.status==='failed'?'✗':'•';details+=`<div style="padding:3px 0;border-bottom:0.5px solid var(--border);font-size:11px;color:var(--text2)"><span>${si}</span> <span style="color:var(--text)">${item.key}</span>${item.value?' — '+item.value.substring(0,60):''}</div>`;}
+      details+='</div>';
+    }
+    document.getElementById('bbDetails').innerHTML=details||'<div style="color:var(--text3)">黑板为空</div>';
+  }catch(e){console.error('blackboard error',e);}
 }
 
-// --- Skill Editor ---
-async function showSkillModal() {
-  document.getElementById('skillModal').classList.add('show');
-  const res = await fetch(API+'/api/skill');
-  const data = await res.json();
-  document.getElementById('skillEditor').value = data.content || '';
-  document.getElementById('skillPath').textContent = data.path || '';
-}
-function hideSkillModal() { document.getElementById('skillModal').classList.remove('show'); }
+async function sendMsg(){const input=document.getElementById('userInput');const msg=input.value.trim();if(!msg||!currentSid)return;input.value='';appendLog('user',msg);streamBuffer=null;await fetch(API+`/api/sessions/${currentSid}/input`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})});}
+function quickSend(msg){if(!currentSid)return;appendLog('user',msg);streamBuffer=null;fetch(API+`/api/sessions/${currentSid}/input`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})});}
 
-async function saveSkill() {
-  const content = document.getElementById('skillEditor').value;
-  if (!content.trim()) return alert('Skill内容不能为空');
-  const res = await fetch(API+'/api/skill', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({content})});
-  if (res.ok) { hideSkillModal(); alert('Skill已保存'); }
-  else alert('保存失败');
+function showNewModal(){document.getElementById('newModal').classList.add('show');document.getElementById('inputTarget').focus();}
+function hideNewModal(){document.getElementById('newModal').classList.remove('show');}
+async function createSession(){
+  const target=document.getElementById('inputTarget').value.trim();if(!target)return alert('请输入目标 URL');
+  const body={target,cookie:document.getElementById('inputCookie').value.trim(),cookie_b:document.getElementById('inputCookieB').value.trim(),scope_notes:document.getElementById('inputNotes').value.trim(),group_name:(document.getElementById('inputGroup')?.value||'').trim()};
+  const res=await fetch(API+'/api/sessions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const data=await res.json();hideNewModal();selectSession(data.id);
 }
 
-// --- Tab key in textarea ---
-document.addEventListener('DOMContentLoaded', () => {
-  const editor = document.getElementById('skillEditor');
-  if (editor) editor.addEventListener('keydown', e => {
-    if (e.key === 'Tab') { e.preventDefault(); const s=editor.selectionStart,end=editor.selectionEnd; editor.value=editor.value.substring(0,s)+'  '+editor.value.substring(end); editor.selectionStart=editor.selectionEnd=s+2; }
-  });
-});
+async function showSkillModal(){const res=await fetch(API+'/api/skill');const data=await res.json();document.getElementById('skillEditor').value=data.content;document.getElementById('skillPath').textContent=data.path;document.getElementById('skillModal').classList.add('show');}
+function hideSkillModal(){document.getElementById('skillModal').classList.remove('show');}
+async function saveSkill(){const content=document.getElementById('skillEditor').value;await fetch(API+'/api/skill',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({content})});hideSkillModal();}
 
-fetchSessions();
-setInterval(fetchSessions, 10000);
+async function showSettingsModal(){const s=await(await fetch(API+'/api/settings')).json();document.getElementById('setProvider').value=s.provider||'anthropic';document.getElementById('setModel').value=s.model||'';document.getElementById('setMaxTokens').value=s.max_tokens||16384;document.getElementById('setApiKey').value='';document.getElementById('setApiKeyHint').textContent=s.api_key?'已配置（输入新值覆盖）':'未配置';document.getElementById('setBaseUrl').value=s.base_url||'';document.getElementById('setBurpProxy').value=s.burp_proxy||'';document.getElementById('setMaxConcurrent').value=s.max_concurrent||3;document.getElementById('settingsModal').classList.add('show');}
+function hideSettingsModal(){document.getElementById('settingsModal').classList.remove('show');}
+async function saveSettings(){
+  const body={provider:document.getElementById('setProvider').value,model:document.getElementById('setModel').value,max_tokens:parseInt(document.getElementById('setMaxTokens').value)||16384,base_url:document.getElementById('setBaseUrl').value,burp_proxy:document.getElementById('setBurpProxy').value,max_concurrent:parseInt(document.getElementById('setMaxConcurrent').value)||3};
+  const key=document.getElementById('setApiKey').value.trim();if(key)body.api_key=key;
+  await fetch(API+'/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});hideSettingsModal();
+}
+
+function startRenameGroup(oldName){
+  const span=document.getElementById('gn-'+oldName);if(!span)return;
+  const input=document.createElement('input');input.type='text';input.className='group-name-input';input.value=oldName==='未分组'?'':oldName;input.placeholder='输入分组名';
+  span.replaceWith(input);input.focus();input.select();
+  async function commit(){const newName=input.value.trim();if(newName&&newName!==oldName){const sessions=await(await fetch(API+'/api/sessions?group='+encodeURIComponent(oldName==='未分组'?'':oldName))).json();for(const s of sessions){await fetch(API+`/api/sessions/${s.id}/group`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({group_name:newName})});}}fetchSessions();}
+  input.addEventListener('blur',commit);input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();input.blur();}if(e.key==='Escape')fetchSessions();});
+}
+
+const THEME_ICONS={light:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>',dark:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>',system:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>'};
+const THEME_TITLES={light:'浅色 / 点击切换深色',dark:'深色 / 点击跟随系统',system:'跟随系统 / 点击切换浅色'};
+function getStoredTheme(){return localStorage.getItem('vh-theme')||'system';}
+function applyTheme(m){document.documentElement.removeAttribute('data-theme');if(m==='light')document.documentElement.setAttribute('data-theme','light');else if(m==='dark')document.documentElement.setAttribute('data-theme','dark');const b=document.getElementById('themeToggle');b.innerHTML=THEME_ICONS[m];b.title=THEME_TITLES[m];}
+function toggleTheme(){const o=['light','dark','system'];const c=getStoredTheme();const n=o[(o.indexOf(c)+1)%3];localStorage.setItem('vh-theme',n);applyTheme(n);}
+applyTheme(getStoredTheme());
+fetchSessions();setInterval(fetchSessions,10000);
 </script>
 </body>
 </html>
