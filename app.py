@@ -364,6 +364,8 @@ async def update_settings(request: Request):
             current[k] = body[k]
     if "api_key" in body and body["api_key"] and not body["api_key"].startswith("****"):
         current["api_key"] = body["api_key"]
+    if "serverchan_key" in body and body["serverchan_key"] and not body["serverchan_key"].startswith("****"):
+        current["serverchan_key"] = body["serverchan_key"]
     cfg.save(current)
     return cfg.get_masked()
 

@@ -17,6 +17,7 @@ DEFAULTS = {
     "max_tokens": MAX_TOKENS,
     "burp_proxy": BURP_PROXY,
     "max_concurrent": MAX_CONCURRENT,
+    "serverchan_key": "",
 }
 
 
@@ -45,4 +46,10 @@ def get_masked() -> dict:
     else:
         s["api_key_masked"] = "****" if key else ""
     s.pop("api_key", None)
+    sc_key = s.get("serverchan_key", "")
+    if len(sc_key) > 8:
+        s["serverchan_key_masked"] = sc_key[:4] + "****" + sc_key[-4:]
+    else:
+        s["serverchan_key_masked"] = "****" if sc_key else ""
+    s.pop("serverchan_key", None)
     return s
