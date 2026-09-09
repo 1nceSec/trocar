@@ -120,15 +120,22 @@ python app.py
 
 ### Docker
 
-```bash
-# 拉取最新镜像
-docker pull ox1dq/vulnhunter:latest
+拉取最新镜像：
 
-# 停止并删除旧容器（data 卷会保留）
+```bash
+docker pull ox1dq/vulnhunter:latest
+```
+
+停止并删除旧容器（data 卷会保留）：
+
+```bash
 docker stop vulnhunter
 docker rm vulnhunter
+```
 
-# 用新镜像启动
+用新镜像启动：
+
+```bash
 docker run -d \
   --name vulnhunter \
   -p 8899:8899 \

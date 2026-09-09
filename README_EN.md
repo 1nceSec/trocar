@@ -120,15 +120,22 @@ python app.py
 
 ### Docker
 
-```bash
-# Pull the latest image
-docker pull ox1dq/vulnhunter:latest
+Pull the latest image:
 
-# Stop and remove the old container (data volume is preserved)
+```bash
+docker pull ox1dq/vulnhunter:latest
+```
+
+Stop and remove the old container (data volume is preserved):
+
+```bash
 docker stop vulnhunter
 docker rm vulnhunter
+```
 
-# Start with the new image
+Start with the new image:
+
+```bash
 docker run -d \
   --name vulnhunter \
   -p 8899:8899 \
