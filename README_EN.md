@@ -19,6 +19,10 @@ Five-phase "surgeon mode": **Threat Modeling → Precision Strike → Deep Refle
 
 Built with AI Vibe Coding. Architecture inspired by [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent) (Planner-Executor-Reflector pattern).
 
+<div align="center">
+  <img src="VulnHunter.png" alt="VulnHunter UI" width="900">
+</div>
+
 ## Features
 
 - **Blackboard Architecture** — Five-partition persistent memory (attack surfaces / verified findings / pending hypotheses / exploits / failure records) to avoid redundant probing

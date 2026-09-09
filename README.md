@@ -19,6 +19,10 @@ VulnHunter 是一个 AI 自主渗透测试系统。给它一个 URL，它会自�
 
 > 本项目通过 AI Vibe Coding 构建，架构设计参考了 [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent)（Planner-Executor-Reflector 模式）。
 
+<div align="center">
+  <img src="VulnHunter.png" alt="VulnHunter UI" width="900">
+</div>
+
 ## 核心特性
 
 - **黑板架构** — 五分区持久化记忆（攻击面 / 已验证发现 / 待验证假设 / 利用原语 / 失败记录），避免重复探测
