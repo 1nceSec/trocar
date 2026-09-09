@@ -105,6 +105,54 @@ docker compose up -d
 3. Open http://127.0.0.1:8899
 ```
 
+## Upgrading
+
+VulnHunter does not auto-update. After a new release, update manually based on your deployment method.
+
+### Git Clone
+
+```bash
+cd vulnhunter
+git pull
+pip install -r requirements.txt
+python app.py
+```
+
+### Docker
+
+```bash
+# Pull the latest image
+docker pull ox1dq/vulnhunter:latest
+
+# Stop and remove the old container (data volume is preserved)
+docker stop vulnhunter
+docker rm vulnhunter
+
+# Start with the new image
+docker run -d \
+  --name vulnhunter \
+  -p 8899:8899 \
+  -v vulnhunter-data:/app/data \
+  ox1dq/vulnhunter:latest
+```
+
+Docker Compose users:
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+> The `vulnhunter-data` volume is independent of the container — updating won't lose your session data or configuration.
+
+### Windows ZIP
+
+```
+1. Download the latest ZIP from Releases
+2. Extract and overwrite the old directory (back up data/ first)
+3. Double-click start.bat
+```
+
 ## Configuration
 
 ### Environment Variables (.env)
