@@ -131,6 +131,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           <button class="btn btn-ghost btn-icon" onclick="togglePanel('findings')" title="漏洞面板"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></button>
           <button class="btn btn-ghost btn-icon" onclick="togglePanel('blackboard')" title="黑板"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></button>
           <button class="btn btn-ghost btn-icon" onclick="exportReport()" title="导出报告"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg></button>
+          <button class="btn btn-ghost btn-icon" onclick="exportHandoff()" title="交接文档"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg></button>
           <button class="btn btn-ghost btn-icon" id="pauseBtn" onclick="pauseCurrent()" title="暂停" style="color:var(--warning);display:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg></button>
           <button class="btn btn-ghost btn-icon" id="resumeBtn" onclick="resumeCurrent()" title="继续" style="color:var(--success);display:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
           <button class="btn btn-danger btn-icon" id="stopBtn" onclick="stopCurrent()" title="终止" style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></button>
@@ -272,6 +273,7 @@ async function pauseCurrent(){if(!currentSid)return;await fetch(API+`/api/sessio
 async function resumeCurrent(){if(!currentSid)return;await fetch(API+`/api/sessions/${currentSid}/resume`,{method:'POST'});}
 async function stopCurrent(){if(!currentSid)return;await fetch(API+`/api/sessions/${currentSid}/stop`,{method:'POST'});}
 function exportReport(){if(currentSid)window.open(API+`/api/sessions/${currentSid}/report`);}
+function exportHandoff(){if(currentSid)window.open(API+`/api/sessions/${currentSid}/handoff`);}
 
 function togglePanel(name){const panels={findings:'findingsPanel',blackboard:'blackboardPanel'};const el=document.getElementById(panels[name]);if(!el)return;const isOpen=el.classList.contains('open');document.querySelectorAll('.side-panel').forEach(p=>p.classList.remove('open'));if(!isOpen)el.classList.add('open');}
 
