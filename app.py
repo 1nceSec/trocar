@@ -64,14 +64,28 @@ async def create_session(request: Request):
         body.get("cookie", ""),
         body.get("cookie_b", ""),
         body.get("scope_notes", ""),
+        body.get("group_name", ""),
     )
     await engine.start_session(sid)
     return {"id": sid, "status": "queued"}
 
 
 @app.get("/api/sessions")
-async def list_sessions():
-    return await db.list_sessions()
+async def list_sessions(search: str = "", group: str = ""):
+    return await db.list_sessions(search, group)
+
+
+@app.get("/api/groups")
+async def list_groups():
+    return await db.list_groups()
+
+
+@app.put("/api/sessions/{sid}/group")
+async def update_session_group(sid: int, request: Request):
+    body = await request.json()
+    group_name = body.get("group_name", "")
+    await db.update_session(sid, group_name=group_name)
+    return {"ok": True}
 
 
 @app.get("/api/sessions/{sid}")
@@ -86,6 +100,22 @@ async def get_session(sid: int):
 async def stop_session(sid: int):
     await engine.stop_session(sid)
     return {"status": "stopped"}
+
+
+@app.post("/api/sessions/{sid}/pause")
+async def pause_session(sid: int):
+    ok = await engine.pause_session(sid)
+    if not ok:
+        raise HTTPException(status_code=400, detail="只能暂停运行中的会话")
+    return {"status": "paused"}
+
+
+@app.post("/api/sessions/{sid}/resume")
+async def resume_session(sid: int):
+    ok = await engine.resume_session(sid)
+    if not ok:
+        raise HTTPException(status_code=400, detail="只能恢复已暂停的会话")
+    return {"status": "running"}
 
 
 @app.delete("/api/sessions/{sid}")
