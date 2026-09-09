@@ -129,6 +129,25 @@ def _trim_messages(messages: list[dict]) -> list[dict]:
     return [first, {"role": "user", "content": summary}, {"role": "assistant", "content": "收到历史摘要，继续测试。"}] + messages[-MAX_WINDOW + 3:]
 
 
+def _classify_api_error(e: Exception) -> str:
+    msg = str(e).lower()
+    if "401" in msg or "invalid.*key" in msg or "authentication" in msg:
+        return "API Key 无效或已过期，请在 Settings 中检查"
+    if "429" in msg or "rate" in msg:
+        return "API 请求频率超限，请稍后重试"
+    if "402" in msg or "insufficient" in msg or "quota" in msg or "balance" in msg:
+        return "API 余额不足，请充值后重试"
+    if "timeout" in msg or "timed out" in msg:
+        return "API 请求超时，目标服务可能不可用"
+    if "connect" in msg or "connection" in msg or "unreachable" in msg or "refused" in msg:
+        return "无法连接 API 服务，请检查网络或 Base URL 配置"
+    if "500" in msg or "502" in msg or "503" in msg or "504" in msg:
+        return "API 服务端错误，服务可能暂时不可用"
+    if "overloaded" in msg:
+        return "API 服务过载，请稍后重试"
+    return f"API 调用失败: {e}"
+
+
 async def _do_one_llm_call(sid: int, s: dict, system_prompt: str, messages: list[dict], model: str = ""):
     """Single LLM call with retry. Returns response dict."""
     if not model:
@@ -149,8 +168,9 @@ async def _do_one_llm_call(sid: int, s: dict, system_prompt: str, messages: list
             return resp
         except Exception as e:
             last_err = e
+            hint = _classify_api_error(e)
             if attempt < MAX_RETRIES:
-                await bus.publish(sid, "stream", {"text": f"\n[重试 {attempt+1}/{MAX_RETRIES}...]\n"})
+                await bus.publish(sid, "stream", {"text": f"\n⚠️ {hint}，重试 {attempt+1}/{MAX_RETRIES}...\n"})
                 await asyncio.sleep(2 ** attempt)
     raise last_err
 
@@ -382,8 +402,10 @@ async def _ai_loop(sid: int, messages: list[dict], system_prompt: str, start_tur
             await bus.publish(sid, "status", {"status": "low_roi", "reason": "达到最大轮次"})
 
     except Exception as e:
+        err_msg = _classify_api_error(e)
         await db.update_session(sid, status="error")
-        await bus.publish(sid, "error", {"message": str(e)})
+        await bus.publish(sid, "stream", {"text": f"\n❌ {err_msg}\n"})
+        await bus.publish(sid, "error", {"message": err_msg})
 
     finally:
         await bus.publish(sid, "done", {})
