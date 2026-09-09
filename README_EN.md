@@ -235,6 +235,25 @@ vulnhunter/
 └── data/               # Runtime data (auto-created)
 ```
 
+## Handoff Document
+
+After a test session ends, you can generate a handoff document with one click, exporting the full test state:
+
+- Blackboard data across all 5 partitions (attack surfaces, verified findings, pending hypotheses, exploits, failure records)
+- Confirmed vulnerability list with PoCs
+- AI conversation history summary
+
+**How to use:**
+
+- UI: Click the "Handoff" button on the session card
+- API: `GET /api/sessions/{id}/handoff`
+
+**Typical scenarios:**
+
+- Resume after interruption: Export current progress, continue from where you left off in a new session
+- Team collaboration: Hand off test results to other team members
+- Archiving: Preserve the complete test process and findings
+
 ## API Reference
 
 | Method | Path | Description |
