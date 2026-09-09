@@ -57,11 +57,7 @@ Open **http://127.0.0.1:8899** in your browser. First launch will guide you thro
 Pull and run:
 
 ```bash
-docker run -d \
-  --name vulnhunter \
-  -p 8899:8899 \
-  -v vulnhunter-data:/app/data \
-  ox1dq/vulnhunter:latest
+docker run -d --name vulnhunter -p 8899:8899 -v vulnhunter-data:/app/data ox1dq/vulnhunter:latest
 ```
 
 Open **http://127.0.0.1:8899** in your browser.
@@ -140,11 +136,7 @@ docker rm vulnhunter
 Start with the new image:
 
 ```bash
-docker run -d \
-  --name vulnhunter \
-  -p 8899:8899 \
-  -v vulnhunter-data:/app/data \
-  ox1dq/vulnhunter:latest
+docker run -d --name vulnhunter -p 8899:8899 -v vulnhunter-data:/app/data ox1dq/vulnhunter:latest
 ```
 
 Docker Compose users:

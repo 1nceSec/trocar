@@ -57,11 +57,7 @@ python app.py
 拉取并启动：
 
 ```bash
-docker run -d \
-  --name vulnhunter \
-  -p 8899:8899 \
-  -v vulnhunter-data:/app/data \
-  ox1dq/vulnhunter:latest
+docker run -d --name vulnhunter -p 8899:8899 -v vulnhunter-data:/app/data ox1dq/vulnhunter:latest
 ```
 
 浏览器打开 http://127.0.0.1:8899
@@ -140,11 +136,7 @@ docker rm vulnhunter
 用新镜像启动：
 
 ```bash
-docker run -d \
-  --name vulnhunter \
-  -p 8899:8899 \
-  -v vulnhunter-data:/app/data \
-  ox1dq/vulnhunter:latest
+docker run -d --name vulnhunter -p 8899:8899 -v vulnhunter-data:/app/data ox1dq/vulnhunter:latest
 ```
 
 Docker Compose 用户：
@@ -184,7 +176,7 @@ docker compose up -d
 
 ### Web 设置（运行时）
 
-点击右上角 **Settings** 可以在运行时修改：提供商、模型、API Key、Base URL、Burp 代理、并发数。
+点击右上角 **Settings** 可以在运行时修改：提供商、模型、API Key、Base URL、Burp 代理、并发数、Server酱推送。
 
 ### Skill 编辑器
 

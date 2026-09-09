@@ -7,6 +7,7 @@ from pathlib import Path
 
 import db
 import settings as cfg
+import notify
 from config import TEMP_DIR, TEMP_LIMIT_MB, INACTIVITY_TIMEOUT, MAX_TURNS, NO_FINDING_STOP
 from events import bus
 from llm import stream_chat, build_tool_result_anthropic, build_tool_result_openai
@@ -307,6 +308,11 @@ async def _ai_loop(sid: int, messages: list[dict], system_prompt: str, start_tur
                     })
                 await bus.publish(sid, "finding", {**f, "id": fid, "verified": verified})
                 found_this_turn = True
+                _session = await db.get_session(sid)
+                asyncio.create_task(notify.notify_finding(
+                    _session["target"] if _session else str(sid),
+                    f["severity"], f["title"], f.get("endpoint", ""),
+                ))
 
             if found_this_turn:
                 no_finding_streak = 0
