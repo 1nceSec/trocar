@@ -21,7 +21,7 @@ async def stream_chat(
     For OpenAI: handles content + tool_calls.
     """
     if provider == "openai":
-        return await _chat_openai(api_key, base_url, model, max_tokens, system, messages, tools)
+        return await _chat_openai(api_key, base_url, model, max_tokens, system, messages, tools, thinking_level)
     return await _chat_anthropic(api_key, base_url, model, max_tokens, system, messages, tools, thinking_level)
 
 
@@ -107,7 +107,7 @@ async def _chat_anthropic(api_key, base_url, model, max_tokens, system, messages
     }
 
 
-async def _chat_openai(api_key, base_url, model, max_tokens, system, messages, use_tools):
+async def _chat_openai(api_key, base_url, model, max_tokens, system, messages, use_tools, thinking_level=""):
     try:
         from openai import AsyncOpenAI
     except ImportError:
@@ -125,6 +125,9 @@ async def _chat_openai(api_key, base_url, model, max_tokens, system, messages, u
         "max_tokens": max_tokens,
         "messages": all_messages,
     }
+    if thinking_level:
+        effort_map = {"low": "low", "medium": "medium", "high": "high", "xhigh": "high", "max": "high"}
+        call_kwargs["reasoning_effort"] = effort_map.get(thinking_level, "medium")
     if use_tools:
         call_kwargs["tools"] = [
             {
