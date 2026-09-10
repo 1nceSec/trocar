@@ -192,7 +192,7 @@ docker compose up -d
 
 | 提供商 | Base URL | 模型 |
 |--------|----------|------|
-| Anthropic | *（默认）* | `claude-sonnet-4-20250514` |
+| Anthropic | `https://api.anthropic.com` | `claude-sonnet-4-20250514` |
 | DeepSeek | `https://api.deepseek.com/v1` | `deepseek-chat` |
 | 通义千问 | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `qwen-max` |
 | 智谱 GLM | `https://open.bigmodel.cn/api/paas/v4` | `glm-4-plus` |

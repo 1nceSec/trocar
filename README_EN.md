@@ -192,7 +192,7 @@ Click **Skill** to edit the core strategy file (SKILL.md) online. New sessions w
 
 | Provider | Base URL | Model |
 |----------|----------|-------|
-| Anthropic | *(default)* | `claude-sonnet-4-20250514` |
+| Anthropic | `https://api.anthropic.com` | `claude-sonnet-4-20250514` |
 | DeepSeek | `https://api.deepseek.com/v1` | `deepseek-chat` |
 | Qwen | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `qwen-max` |
 | GLM | `https://open.bigmodel.cn/api/paas/v4` | `glm-4-plus` |
