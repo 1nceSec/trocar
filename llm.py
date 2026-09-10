@@ -14,6 +14,7 @@ async def stream_chat(
     system: str,
     messages: list[dict],
     tools: bool = True,
+    thinking_level: str = "",
 ) -> dict:
     """Run one LLM turn. Returns the full response message dict.
     For Anthropic: handles text + tool_use content blocks.
@@ -21,7 +22,7 @@ async def stream_chat(
     """
     if provider == "openai":
         return await _chat_openai(api_key, base_url, model, max_tokens, system, messages, tools)
-    return await _chat_anthropic(api_key, base_url, model, max_tokens, system, messages, tools)
+    return await _chat_anthropic(api_key, base_url, model, max_tokens, system, messages, tools, thinking_level)
 
 
 async def stream_text(
@@ -43,7 +44,16 @@ async def stream_text(
             yield chunk
 
 
-async def _chat_anthropic(api_key, base_url, model, max_tokens, system, messages, use_tools):
+THINKING_BUDGETS = {
+    "low": 2048,
+    "medium": 8192,
+    "high": 32768,
+    "xhigh": 65536,
+    "max": 128000,
+}
+
+
+async def _chat_anthropic(api_key, base_url, model, max_tokens, system, messages, use_tools, thinking_level=""):
     import anthropic
 
     kwargs = {"api_key": api_key}
@@ -51,12 +61,16 @@ async def _chat_anthropic(api_key, base_url, model, max_tokens, system, messages
         kwargs["base_url"] = base_url
     client = anthropic.AsyncAnthropic(**kwargs)
 
+    budget = THINKING_BUDGETS.get(thinking_level, 0)
+
     call_kwargs = {
         "model": model,
-        "max_tokens": max_tokens,
+        "max_tokens": max(max_tokens, budget + max_tokens) if budget else max_tokens,
         "system": system,
         "messages": messages,
     }
+    if budget:
+        call_kwargs["thinking"] = {"type": "enabled", "budget_tokens": budget}
     if use_tools:
         call_kwargs["tools"] = TOOL_DEFINITIONS
 
@@ -65,7 +79,9 @@ async def _chat_anthropic(api_key, base_url, model, max_tokens, system, messages
     text_parts = []
     tool_calls = []
     for block in response.content:
-        if block.type == "text":
+        if block.type == "thinking":
+            continue
+        elif block.type == "text":
             text_parts.append(block.text)
         elif block.type == "tool_use":
             tool_calls.append({
@@ -74,15 +90,20 @@ async def _chat_anthropic(api_key, base_url, model, max_tokens, system, messages
                 "input": block.input,
             })
 
+    raw_content = []
+    for b in response.content:
+        if b.type == "thinking":
+            raw_content.append({"type": "thinking", "thinking": b.thinking})
+        elif b.type == "text":
+            raw_content.append({"type": "text", "text": b.text})
+        elif b.type == "tool_use":
+            raw_content.append({"type": "tool_use", "id": b.id, "name": b.name, "input": b.input})
+
     return {
         "text": "\n".join(text_parts),
         "tool_calls": tool_calls,
         "stop_reason": response.stop_reason,
-        "raw_content": [
-            {"type": b.type, "text": b.text} if b.type == "text"
-            else {"type": "tool_use", "id": b.id, "name": b.name, "input": b.input}
-            for b in response.content
-        ],
+        "raw_content": raw_content,
     }
 
 

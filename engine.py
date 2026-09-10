@@ -164,6 +164,7 @@ async def _do_one_llm_call(sid: int, s: dict, system_prompt: str, messages: list
                 system=system_prompt,
                 messages=messages,
                 tools=True,
+                thinking_level=s.get("thinking_level", "medium") if s["provider"] == "anthropic" else "",
             )
             return resp
         except Exception as e:
