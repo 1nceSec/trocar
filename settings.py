@@ -15,6 +15,7 @@ DEFAULTS = {
     "api_key": ANTHROPIC_API_KEY,
     "base_url": "",
     "max_tokens": MAX_TOKENS,
+    "thinking_level": "medium",
     "burp_proxy": BURP_PROXY,
     "max_concurrent": MAX_CONCURRENT,
     "serverchan_key": "",
