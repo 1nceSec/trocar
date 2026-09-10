@@ -8,7 +8,7 @@ BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "data"
 REPORTS_DIR = DATA_DIR / "reports"
 TEMP_DIR = DATA_DIR / "temp"
-DB_PATH = DATA_DIR / "vulnhunter.db"
+DB_PATH = DATA_DIR / "trocar.db"
 
 SKILL_DIR = Path(os.getenv("SKILL_DIR", str(DATA_DIR / "skill")))
 SKILL_FILE = SKILL_DIR / "SKILL.md"

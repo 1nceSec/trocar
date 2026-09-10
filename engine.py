@@ -550,7 +550,7 @@ async def _chat_session(sid: int, user_msg: str):
             context_parts.append(f"攻击面（前10）: {', '.join(a['key'] for a in attack_surfaces[:10])}")
 
         system_prompt = (
-            "你是 VulnHunter 的安全助手。测试已结束，用户正在复盘/追问。\n"
+            "你是 Trocar 的安全助手。测试已结束，用户正在复盘/追问。\n"
             "基于以下测试结果回答问题，可以用 execute_command 执行额外验证。\n\n"
             + "\n".join(context_parts)
         )

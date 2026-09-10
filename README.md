@@ -1,26 +1,26 @@
 <div align="center">
 
-# VulnHunter
+# Trocar
 
 **AI 驱动的自动化渗透测试平台**
 
 中文 | [English](README_EN.md)
 
-[![GitHub release](https://img.shields.io/github/v/release/1nceSec/vulnhunter)](https://github.com/1nceSec/vulnhunter/releases)
+[![GitHub release](https://img.shields.io/github/v/release/1nceSec/trocar)](https://github.com/1nceSec/trocar/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 </div>
 
 ## 这是什么？
 
-VulnHunter 是一个 AI 自主渗透测试系统。给它一个 URL，它会自动完成 JS 分析、接口发现、漏洞利用和报告生成。
+Trocar 是一个 AI 自主渗透测试系统。给它一个 URL，它会自动完成 JS 分析、接口发现、漏洞利用和报告生成。
 
 五阶段「外科手术」模式：**威胁建模 → 精准打击 → 深度反思 → 绕过探索 → 深度验证**
 
 > 本项目通过 AI Vibe Coding 构建，架构设计参考了 [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent)（Planner-Executor-Reflector 模式）。
 
 <div align="center">
-  <img src="VulnHunter.png" alt="VulnHunter UI" width="900">
+  <img src="Trocar.png" alt="Trocar UI" width="900">
 </div>
 
 ## 核心特性
@@ -44,8 +44,8 @@ VulnHunter 是一个 AI 自主渗透测试系统。给它一个 URL，它会自�
 ### 方式一：克隆运行
 
 ```bash
-git clone https://github.com/1nceSec/vulnhunter.git
-cd vulnhunter
+git clone https://github.com/1nceSec/trocar.git
+cd trocar
 pip install -r requirements.txt
 python app.py
 ```
@@ -57,7 +57,7 @@ python app.py
 拉取并启动：
 
 ```bash
-docker run -d --name vulnhunter -p 8899:8899 -v vulnhunter-data:/app/data ox1dq/vulnhunter:latest
+docker run -d --name trocar -p 8899:8899 -v trocar-data:/app/data ox1dq/trocar:latest
 ```
 
 浏览器打开 http://127.0.0.1:8899
@@ -65,14 +65,14 @@ docker run -d --name vulnhunter -p 8899:8899 -v vulnhunter-data:/app/data ox1dq/
 查看日志：
 
 ```bash
-docker logs -f vulnhunter
+docker logs -f trocar
 ```
 
 停止和删除：
 
 ```bash
-docker stop vulnhunter
-docker rm vulnhunter
+docker stop trocar
+docker rm trocar
 ```
 
 **Docker Compose（可选）：** 创建 `docker-compose.yml`：
@@ -80,15 +80,15 @@ docker rm vulnhunter
 ```yaml
 version: '3.8'
 services:
-  vulnhunter:
-    image: ox1dq/vulnhunter:latest
+  trocar:
+    image: ox1dq/trocar:latest
     ports:
       - "8899:8899"
     volumes:
-      - vulnhunter-data:/app/data
+      - trocar-data:/app/data
     restart: unless-stopped
 volumes:
-  vulnhunter-data:
+  trocar-data:
 ```
 
 启动：
@@ -107,12 +107,12 @@ docker compose up -d
 
 ## 更新升级
 
-VulnHunter 不会自动更新，发布新版本后需要手动操作。
+Trocar 不会自动更新，发布新版本后需要手动操作。
 
 ### 克隆运行
 
 ```bash
-cd vulnhunter
+cd trocar
 git pull
 pip install -r requirements.txt
 python app.py
@@ -123,20 +123,20 @@ python app.py
 拉取最新镜像：
 
 ```bash
-docker pull ox1dq/vulnhunter:latest
+docker pull ox1dq/trocar:latest
 ```
 
 停止并删除旧容器（data 卷会保留）：
 
 ```bash
-docker stop vulnhunter
-docker rm vulnhunter
+docker stop trocar
+docker rm trocar
 ```
 
 用新镜像启动：
 
 ```bash
-docker run -d --name vulnhunter -p 8899:8899 -v vulnhunter-data:/app/data ox1dq/vulnhunter:latest
+docker run -d --name trocar -p 8899:8899 -v trocar-data:/app/data ox1dq/trocar:latest
 ```
 
 Docker Compose 用户：
@@ -146,7 +146,7 @@ docker compose pull
 docker compose up -d
 ```
 
-> `vulnhunter-data` 卷独立于容器，更新不会丢失已有的会话数据和配置。
+> `trocar-data` 卷独立于容器，更新不会丢失已有的会话数据和配置。
 
 ### Windows ZIP
 
@@ -239,7 +239,7 @@ docker compose up -d
 ## 项目结构
 
 ```
-vulnhunter/
+trocar/
 ├── app.py              # FastAPI 应用（REST API + WebSocket）
 ├── engine.py           # AI 引擎（会话循环 + 工具调用 + 模型分级）
 ├── llm.py              # LLM 抽象层（Anthropic Tool Use + OpenAI 兼容）

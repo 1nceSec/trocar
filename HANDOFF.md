@@ -1,11 +1,11 @@
-# VulnHunter 交接文档
+# Trocar 交接文档
 
 ## 项目概况
 
 AI 驱动的自动化渗透测试平台，给一个 URL 自动完成 JS 分析、接口发现、漏洞利用、报告生成。
 
-- GitHub: https://github.com/1nceSec/vulnhunter
-- Docker Hub: ox1dq/vulnhunter
+- GitHub: https://github.com/1nceSec/trocar
+- Docker Hub: ox1dq/trocar
 - 当前版本: v1.3.1
 - 技术栈: Python + FastAPI + SQLite + WebSocket + Jinja2 单文件前端
 
@@ -23,7 +23,7 @@ AI 驱动的自动化渗透测试平台，给一个 URL 自动完成 JS 分析�
 ## 架构关键文件
 
 ```
-vuln-hunter/
+trocar/
 ├── app.py          # FastAPI 路由（含 pause/resume/groups/handoff API）
 ├── engine.py       # AI 引擎（_ai_loop + _chat_session + 暂停 Event）
 ├── prompt.py       # Prompt 构建（FEATURE_KB_MAP 38条 + CHAIN_RULES 12条 + 6 LENSES）
