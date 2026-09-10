@@ -2,7 +2,7 @@
 chcp 65001 >nul
 cd /d "%~dp0"
 
-echo [VulnHunter] Checking environment...
+echo [Trocar] Checking environment...
 
 where python >nul 2>&1
 if errorlevel 1 (
@@ -20,12 +20,12 @@ if not exist ".env" (
     exit /b 1
 )
 
-echo [VulnHunter] Installing dependencies...
+echo [Trocar] Installing dependencies...
 python -m pip install -r requirements.txt -q 2>nul
 
-echo [VulnHunter] Initializing database...
+echo [Trocar] Initializing database...
 python -c "import asyncio; import db; asyncio.run(db.init_db())"
 
-echo [VulnHunter] Starting server at http://127.0.0.1:8899
+echo [Trocar] Starting server at http://127.0.0.1:8899
 python app.py
 pause

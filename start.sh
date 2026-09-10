@@ -2,7 +2,7 @@
 set -e
 cd "$(dirname "$0")"
 
-echo "[VulnHunter] Checking environment..."
+echo "[Trocar] Checking environment..."
 
 if ! command -v python3 &>/dev/null && ! command -v python &>/dev/null; then
     echo "[ERROR] Python not found. Please install Python 3.10+"
@@ -19,14 +19,14 @@ if [ ! -f ".env" ]; then
 fi
 
 if [ ! -d "venv" ]; then
-    echo "[VulnHunter] Creating virtual environment..."
+    echo "[Trocar] Creating virtual environment..."
     $PY -m venv venv
 fi
 
 source venv/bin/activate
 
-echo "[VulnHunter] Installing dependencies..."
+echo "[Trocar] Installing dependencies..."
 pip install -r requirements.txt -q 2>/dev/null
 
-echo "[VulnHunter] Starting server at http://127.0.0.1:8899"
+echo "[Trocar] Starting server at http://127.0.0.1:8899"
 python app.py

@@ -1,26 +1,26 @@
 <div align="center">
 
-# VulnHunter
+# Trocar
 
 **AI-Powered Autonomous Penetration Testing Platform**
 
 [中文](README.md) | English
 
-[![GitHub release](https://img.shields.io/github/v/release/1nceSec/vulnhunter)](https://github.com/1nceSec/vulnhunter/releases)
+[![GitHub release](https://img.shields.io/github/v/release/1nceSec/trocar)](https://github.com/1nceSec/trocar/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 </div>
 
-## What is VulnHunter?
+## What is Trocar?
 
-VulnHunter is an autonomous penetration testing system powered by AI. Give it a URL, it does the rest — JS analysis, endpoint discovery, vulnerability exploitation, and report generation.
+Trocar is an autonomous penetration testing system powered by AI. Give it a URL, it does the rest — JS analysis, endpoint discovery, vulnerability exploitation, and report generation.
 
 Five-phase "surgeon mode": **Threat Modeling → Precision Strike → Deep Reflection → Bypass → Deep Verification**
 
 Built with AI Vibe Coding. Architecture inspired by [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent) (Planner-Executor-Reflector pattern).
 
 <div align="center">
-  <img src="VulnHunter.png" alt="VulnHunter UI" width="900">
+  <img src="Trocar.png" alt="Trocar UI" width="900">
 </div>
 
 ## Features
@@ -44,8 +44,8 @@ Built with AI Vibe Coding. Architecture inspired by [LuaN1aoAgent](https://githu
 ### Option 1: Clone & Run
 
 ```bash
-git clone https://github.com/1nceSec/vulnhunter.git
-cd vulnhunter
+git clone https://github.com/1nceSec/trocar.git
+cd trocar
 pip install -r requirements.txt
 python app.py
 ```
@@ -57,7 +57,7 @@ Open **http://127.0.0.1:8899** in your browser. First launch will guide you thro
 Pull and run:
 
 ```bash
-docker run -d --name vulnhunter -p 8899:8899 -v vulnhunter-data:/app/data ox1dq/vulnhunter:latest
+docker run -d --name trocar -p 8899:8899 -v trocar-data:/app/data ox1dq/trocar:latest
 ```
 
 Open **http://127.0.0.1:8899** in your browser.
@@ -65,14 +65,14 @@ Open **http://127.0.0.1:8899** in your browser.
 View logs:
 
 ```bash
-docker logs -f vulnhunter
+docker logs -f trocar
 ```
 
 Stop and remove:
 
 ```bash
-docker stop vulnhunter
-docker rm vulnhunter
+docker stop trocar
+docker rm trocar
 ```
 
 **Docker Compose (optional):** Create `docker-compose.yml`:
@@ -80,15 +80,15 @@ docker rm vulnhunter
 ```yaml
 version: '3.8'
 services:
-  vulnhunter:
-    image: ox1dq/vulnhunter:latest
+  trocar:
+    image: ox1dq/trocar:latest
     ports:
       - "8899:8899"
     volumes:
-      - vulnhunter-data:/app/data
+      - trocar-data:/app/data
     restart: unless-stopped
 volumes:
-  vulnhunter-data:
+  trocar-data:
 ```
 
 Start:
@@ -107,12 +107,12 @@ docker compose up -d
 
 ## Upgrading
 
-VulnHunter does not auto-update. After a new release, update manually based on your deployment method.
+Trocar does not auto-update. After a new release, update manually based on your deployment method.
 
 ### Git Clone
 
 ```bash
-cd vulnhunter
+cd trocar
 git pull
 pip install -r requirements.txt
 python app.py
@@ -123,20 +123,20 @@ python app.py
 Pull the latest image:
 
 ```bash
-docker pull ox1dq/vulnhunter:latest
+docker pull ox1dq/trocar:latest
 ```
 
 Stop and remove the old container (data volume is preserved):
 
 ```bash
-docker stop vulnhunter
-docker rm vulnhunter
+docker stop trocar
+docker rm trocar
 ```
 
 Start with the new image:
 
 ```bash
-docker run -d --name vulnhunter -p 8899:8899 -v vulnhunter-data:/app/data ox1dq/vulnhunter:latest
+docker run -d --name trocar -p 8899:8899 -v trocar-data:/app/data ox1dq/trocar:latest
 ```
 
 Docker Compose users:
@@ -146,7 +146,7 @@ docker compose pull
 docker compose up -d
 ```
 
-> The `vulnhunter-data` volume is independent of the container — updating won't lose your session data or configuration.
+> The `trocar-data` volume is independent of the container — updating won't lose your session data or configuration.
 
 ### Windows ZIP
 
@@ -220,7 +220,7 @@ Auto-stop after N rounds with no new findings
 ## Architecture
 
 ```
-vulnhunter/
+trocar/
 ├── app.py              # FastAPI app (REST API + WebSocket)
 ├── engine.py           # AI engine (session loop + tool calls + model tiering)
 ├── llm.py              # LLM abstraction (Anthropic Tool Use + OpenAI compat)
