@@ -57,7 +57,7 @@ python app.py
 拉取并启动：
 
 ```bash
-docker run -d --name vulnhunter -p 8899:8899 -v vulnhunter-data:/app/data ox1dq/vulnhunter:latest
+docker run -d --name vulnhunter -p 8899:8899 -v vulnhunter-data:/app/data ghcr.io/1ncesec/vulnhunter:latest
 ```
 
 浏览器打开 http://127.0.0.1:8899
@@ -81,7 +81,7 @@ docker rm vulnhunter
 version: '3.8'
 services:
   vulnhunter:
-    image: ox1dq/vulnhunter:latest
+    image: ghcr.io/1ncesec/vulnhunter:latest
     ports:
       - "8899:8899"
     volumes:
@@ -123,7 +123,7 @@ python app.py
 拉取最新镜像：
 
 ```bash
-docker pull ox1dq/vulnhunter:latest
+docker pull ghcr.io/1ncesec/vulnhunter:latest
 ```
 
 停止并删除旧容器（data 卷会保留）：
@@ -136,7 +136,7 @@ docker rm vulnhunter
 用新镜像启动：
 
 ```bash
-docker run -d --name vulnhunter -p 8899:8899 -v vulnhunter-data:/app/data ox1dq/vulnhunter:latest
+docker run -d --name vulnhunter -p 8899:8899 -v vulnhunter-data:/app/data ghcr.io/1ncesec/vulnhunter:latest
 ```
 
 Docker Compose 用户：

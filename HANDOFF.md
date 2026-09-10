@@ -5,7 +5,7 @@
 AI 驱动的自动化渗透测试平台，给一个 URL 自动完成 JS 分析、接口发现、漏洞利用、报告生成。
 
 - GitHub: https://github.com/1nceSec/vulnhunter
-- Docker Hub: ox1dq/vulnhunter
+- GHCR: ghcr.io/1ncesec/vulnhunter
 - 当前版本: v1.3.1
 - 技术栈: Python + FastAPI + SQLite + WebSocket + Jinja2 单文件前端
 
