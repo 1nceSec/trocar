@@ -57,7 +57,7 @@ Open **http://127.0.0.1:8899** in your browser. First launch will guide you thro
 Pull and run:
 
 ```bash
-docker run -d --name vulnhunter -p 8899:8899 -v vulnhunter-data:/app/data ox1dq/vulnhunter:latest
+docker run -d --name vulnhunter -p 8899:8899 -v vulnhunter-data:/app/data ghcr.io/1ncesec/vulnhunter:latest
 ```
 
 Open **http://127.0.0.1:8899** in your browser.
@@ -81,7 +81,7 @@ docker rm vulnhunter
 version: '3.8'
 services:
   vulnhunter:
-    image: ox1dq/vulnhunter:latest
+    image: ghcr.io/1ncesec/vulnhunter:latest
     ports:
       - "8899:8899"
     volumes:
@@ -123,7 +123,7 @@ python app.py
 Pull the latest image:
 
 ```bash
-docker pull ox1dq/vulnhunter:latest
+docker pull ghcr.io/1ncesec/vulnhunter:latest
 ```
 
 Stop and remove the old container (data volume is preserved):
@@ -136,7 +136,7 @@ docker rm vulnhunter
 Start with the new image:
 
 ```bash
-docker run -d --name vulnhunter -p 8899:8899 -v vulnhunter-data:/app/data ox1dq/vulnhunter:latest
+docker run -d --name vulnhunter -p 8899:8899 -v vulnhunter-data:/app/data ghcr.io/1ncesec/vulnhunter:latest
 ```
 
 Docker Compose users:
