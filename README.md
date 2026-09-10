@@ -60,6 +60,12 @@ python app.py
 docker run -d --name trocar -p 8899:8899 -v trocar-data:/app/data ox1dq/trocar:latest
 ```
 
+局域网访问（允许其他设备连接）：
+
+```bash
+docker run -d --name trocar -p 8899:8899 -v trocar-data:/app/data -e HOST=0.0.0.0 ox1dq/trocar:latest
+```
+
 浏览器打开 http://127.0.0.1:8899
 
 查看日志：

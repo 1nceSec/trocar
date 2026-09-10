@@ -60,6 +60,12 @@ Pull and run:
 docker run -d --name trocar -p 8899:8899 -v trocar-data:/app/data ox1dq/trocar:latest
 ```
 
+LAN access (allow connections from other devices):
+
+```bash
+docker run -d --name trocar -p 8899:8899 -v trocar-data:/app/data -e HOST=0.0.0.0 ox1dq/trocar:latest
+```
+
 Open **http://127.0.0.1:8899** in your browser.
 
 View logs:
