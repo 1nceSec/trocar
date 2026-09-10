@@ -169,8 +169,8 @@ docker compose up -d
 | 变量 | 说明 | 默认值 |
 |------|------|--------|
 | `ANTHROPIC_API_KEY` | API Key（首次启动通过浏览器配置） | - |
-| `MODEL` | 默认模型 | claude-sonnet-4-20250514 |
-| `MODEL_STRONG` | 强模型（建模/验证阶段） | claude-opus-4-20250514 |
+| `MODEL` | 默认模型 | claude-sonnet-5 |
+| `MODEL_STRONG` | 强模型（建模/验证阶段） | claude-opus-5 |
 | `MODEL_FAST` | 快模型（打击阶段） | claude-haiku-4-5-20251001 |
 | `MAX_TOKENS` | 最大输出 token | 16384 |
 | `BURP_PROXY` | Burp 代理地址（可选） | http://127.0.0.1:8080 |
@@ -192,10 +192,10 @@ docker compose up -d
 
 | 提供商 | Base URL | 模型 |
 |--------|----------|------|
-| Anthropic | `https://api.anthropic.com` | `claude-sonnet-4-20250514` |
-| DeepSeek | `https://api.deepseek.com/v1` | `deepseek-chat` |
-| 通义千问 | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `qwen-max` |
-| 智谱 GLM | `https://open.bigmodel.cn/api/paas/v4` | `glm-4-plus` |
+| Anthropic | `https://api.anthropic.com` | `claude-sonnet-5` |
+| DeepSeek | `https://api.deepseek.com/v1` | `deepseek-v4-pro` |
+| 通义千问 | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `qwen-3.7-max` |
+| 智谱 GLM | `https://open.bigmodel.cn/api/paas/v4` | `glm-5.3` |
 | Ollama | `http://127.0.0.1:11434/v1` | `llama3.1` |
 | OpenAI | `https://api.openai.com/v1` | `gpt-4o` |
 
