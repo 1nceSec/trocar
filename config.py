@@ -15,8 +15,8 @@ SKILL_FILE = SKILL_DIR / "SKILL.md"
 KNOWLEDGE_DIR = BASE_DIR / "knowledge"
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
-MODEL = os.getenv("MODEL", "claude-sonnet-4-20250514")
-MODEL_STRONG = os.getenv("MODEL_STRONG", "claude-opus-4-20250514")
+MODEL = os.getenv("MODEL", "claude-sonnet-5")
+MODEL_STRONG = os.getenv("MODEL_STRONG", "claude-opus-5")
 MODEL_FAST = os.getenv("MODEL_FAST", "claude-haiku-4-5-20251001")
 MAX_TOKENS = int(os.getenv("MAX_TOKENS", "16384"))
 
