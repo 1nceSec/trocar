@@ -26,6 +26,6 @@ python -m pip install -r requirements.txt -q 2>nul
 echo [Trocar] Initializing database...
 python -c "import asyncio; import db; asyncio.run(db.init_db())"
 
-echo [Trocar] Starting server at http://127.0.0.1:8899
+echo [Trocar] Starting server at http://127.0.0.1:9899
 python app.py
 pause

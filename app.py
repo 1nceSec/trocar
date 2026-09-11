@@ -370,6 +370,50 @@ async def update_settings(request: Request):
     return cfg.get_masked()
 
 
+@app.post("/api/speedtest")
+async def speedtest(request: Request):
+    import time
+    from llm import stream_text
+    body = await request.json()
+    model_name = body.get("model", "")
+    s = cfg.load()
+    if not s.get("api_key"):
+        raise HTTPException(status_code=400, detail="未配置 API Key")
+    target_model = model_name or s.get("model", "")
+    if not target_model:
+        raise HTTPException(status_code=400, detail="未指定模型")
+    t0 = time.perf_counter()
+    ttft = None
+    token_count = 0
+    full_text = ""
+    try:
+        async for chunk in stream_text(
+            provider=s.get("provider", "anthropic"),
+            api_key=s["api_key"],
+            base_url=s.get("base_url", ""),
+            model=target_model,
+            max_tokens=128,
+            system="You are a helpful assistant.",
+            messages=[{"role": "user", "content": "Say hello in one sentence."}],
+        ):
+            if ttft is None:
+                ttft = round((time.perf_counter() - t0) * 1000)
+            token_count += 1
+            full_text += chunk
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:200]}
+    total_ms = round((time.perf_counter() - t0) * 1000)
+    tps = round(token_count / (total_ms / 1000), 1) if total_ms > 0 else 0
+    return {
+        "ok": True,
+        "model": target_model,
+        "ttft_ms": ttft or 0,
+        "total_ms": total_ms,
+        "tokens": token_count,
+        "tps": tps,
+    }
+
+
 @app.get("/api/skill")
 async def get_skill():
     from config import SKILL_FILE
