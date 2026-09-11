@@ -27,7 +27,7 @@ Trocar 是一个 AI 自主渗透测试系统。给它一个 URL，它会自动�
 
 - **黑板架构** — 五分区持久化记忆（攻击面 / 已验证发现 / 待验证假设 / 利用原语 / 失败记录），避免重复探测
 - **34 个漏洞知识库** — 覆盖 IDOR、SQLi、XSS、SSRF、RCE、JWT、GraphQL、WebSocket 等主流漏洞类型，特征匹配自动加载测试模块
-- **模型分级** — 按阶段自动切换模型（强模型做建模和验证，快模型做打击），控制成本
+- **思考强度** — 5 级可调（Low / Medium / High / XHigh / Max），控制模型推理深度和 token 消耗
 - **验证铁律** — 所有漏洞发现必须有真实 curl 请求证据，模型自述「我认为」不算数
 - **多视角轮转** — 6 个分析视角覆盖 4 个阶段，像一个专家团队系统化覆盖
 - **自动收敛** — 连续 N 轮无新发现自动停止，不浪费 token
@@ -170,8 +170,6 @@ docker compose up -d
 |------|------|--------|
 | `ANTHROPIC_API_KEY` | API Key（首次启动通过浏览器配置） | - |
 | `MODEL` | 默认模型 | claude-sonnet-5 |
-| `MODEL_STRONG` | 强模型（建模/验证阶段） | claude-opus-5 |
-| `MODEL_FAST` | 快模型（打击阶段） | claude-haiku-4-5-20251001 |
 | `MAX_TOKENS` | 最大输出 token | 16384 |
 | `BURP_PROXY` | Burp 代理地址（可选） | http://127.0.0.1:8080 |
 | `MAX_CONCURRENT` | 最大并发会话数 | 3 |
@@ -206,18 +204,18 @@ docker compose up -d
 ```
 输入: https://target.com
 
-阶段1: 威胁建模（强模型）
+阶段1: 威胁建模
   视角: 攻击面侦察 → curl 抓页面、探测敏感路径、收集接口
   视角: JS 逆向分析 → 下载 JS、搜索硬编码密钥/凭证
 
-阶段2: 精准打击（快模型）
+阶段2: 精准打击
   视角: 未授权探测  → 逐个接口测试无认证访问
   视角: 漏洞利用构造 → 对假设构造 PoC，用真实请求验证
 
 阶段3: 绕过探索
   视角: 绕过 403   → 路径截断、参数污染、UA 欺骗...
 
-阶段4: 深度验证（强模型）
+阶段4: 深度验证
   视角: 深度验证   → 评估真实影响、扩大攻击面
 
 连续 N 轮无新发现自动停止
@@ -247,7 +245,7 @@ docker compose up -d
 ```
 trocar/
 ├── app.py              # FastAPI 应用（REST API + WebSocket）
-├── engine.py           # AI 引擎（会话循环 + 工具调用 + 模型分级）
+├── engine.py           # AI 引擎（会话循环 + 工具调用 + 思考强度）
 ├── llm.py              # LLM 抽象层（Anthropic Tool Use + OpenAI 兼容）
 ├── tools.py            # 工具沙箱（命令执行 / 文件读写 / 黑板 + 安全拦截）
 ├── db.py               # SQLite 数据库（含黑板五分区表）

@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from config import (
-    DATA_DIR, ANTHROPIC_API_KEY, MODEL, MODEL_STRONG, MODEL_FAST, MAX_TOKENS,
+    DATA_DIR, ANTHROPIC_API_KEY, MODEL, MAX_TOKENS,
     BURP_PROXY, MAX_CONCURRENT,
 )
 
@@ -10,8 +10,6 @@ SETTINGS_FILE = DATA_DIR / "settings.json"
 DEFAULTS = {
     "provider": "anthropic",
     "model": MODEL,
-    "model_strong": MODEL_STRONG,
-    "model_fast": MODEL_FAST,
     "api_key": ANTHROPIC_API_KEY,
     "base_url": "",
     "max_tokens": MAX_TOKENS,

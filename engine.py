@@ -27,17 +27,6 @@ MAX_WINDOW = 40
 MAX_RETRIES = 2
 MAX_TOOL_ROUNDS = 20
 
-STRONG_PHASES = ("threat_model", "bypass", "deep_verify")
-FAST_PHASES = ("strike",)
-
-
-def _pick_model(s: dict, phase: str) -> str:
-    if phase in STRONG_PHASES and s.get("model_strong"):
-        return s["model_strong"]
-    if phase in FAST_PHASES and s.get("model_fast"):
-        return s["model_fast"]
-    return s["model"]
-
 
 def _get_semaphore() -> asyncio.Semaphore:
     global _semaphore, _semaphore_limit
@@ -219,7 +208,7 @@ async def _ai_loop(sid: int, messages: list[dict], system_prompt: str, start_tur
             if check and check["status"] == "stopped":
                 break
 
-            model = _pick_model(s, current_phase)
+            model = s["model"]
 
             bb = await db.bb_summary(sid)
             bb_context = (

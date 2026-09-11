@@ -27,7 +27,7 @@ Built with AI Vibe Coding. Architecture inspired by [LuaN1aoAgent](https://githu
 
 - **Blackboard Architecture** — Five-partition persistent memory (attack surfaces / verified findings / pending hypotheses / exploits / failure records) to avoid redundant probing
 - **34 Vulnerability Knowledge Modules** — Covers IDOR, SQLi, XSS, SSRF, RCE, JWT, GraphQL, WebSocket and more; auto-loads matching modules based on target characteristics
-- **Model Tiering** — Auto-switches models by phase (strong model for modeling & verification, fast model for striking), cost-efficient
+- **Thinking Levels** — 5 adjustable levels (Low / Medium / High / XHigh / Max) to control reasoning depth and token cost
 - **Verification Iron Rule** — Every finding MUST have real curl request evidence; model self-assertion doesn't count
 - **Multi-Lens Rotation** — 6 analysis perspectives across 4 phases, systematic coverage like a team of specialists
 - **Auto-Convergence** — Stops after N consecutive rounds with no new findings
@@ -169,9 +169,7 @@ docker compose up -d
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `ANTHROPIC_API_KEY` | API Key (configured via browser on first launch) | - |
-| `MODEL` | Default model | claude-sonnet-4-20250514 |
-| `MODEL_STRONG` | Strong model (modeling/verification phases) | claude-opus-4-20250514 |
-| `MODEL_FAST` | Fast model (strike phase) | claude-haiku-4-5-20251001 |
+| `MODEL` | Default model | claude-sonnet-5 |
 | `MAX_TOKENS` | Max output tokens | 16384 |
 | `BURP_PROXY` | Burp proxy address (optional) | http://127.0.0.1:8080 |
 | `MAX_CONCURRENT` | Max concurrent sessions | 3 |
@@ -206,18 +204,18 @@ Click **Skill** to edit the core strategy file (SKILL.md) online. New sessions w
 ```
 Input: https://target.com
 
-Phase 1: Threat Modeling (strong model)
+Phase 1: Threat Modeling
   Lens: Surface Recon → curl pages, probe sensitive paths, collect endpoints
   Lens: JS Reverse   → download JS, search for hardcoded keys/secrets
 
-Phase 2: Precision Strike (fast model)
+Phase 2: Precision Strike
   Lens: Unauth Probe  → test each endpoint without authentication
   Lens: Exploit Craft  → build PoC for hypotheses, verify with real requests
 
 Phase 3: Bypass
   Lens: Bypass 403    → path truncation, parameter pollution, UA spoofing...
 
-Phase 4: Deep Verification (strong model)
+Phase 4: Deep Verification
   Lens: Deep Verify   → assess real impact, expand attack surface
 
 Auto-stop after N rounds with no new findings

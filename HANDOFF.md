@@ -20,7 +20,7 @@ AI 驱动的自动化渗透测试平台，给一个 URL 自动完成 JS 分析�
 | v1.3.0 | 暂停/恢复/终止、任务结束后对话、分组管理、漏洞摘要、搜索筛选 |
 | v1.3.1 | 全新 UI（毛玻璃/暗色模式/行内重命名/侧滑面板） |
 | v1.3.2 | Server酱推送、Skill上传、API异常监测 |
-| v2.0.0 | 项目更名 Trocar、多提供商 Setup、思考强度调节、强/快模型切换、默认模型更新 |
+| v2.0.0 | 项目更名 Trocar、多提供商 Setup、思考强度调节、默认模型更新 |
 
 ## 架构关键文件
 
@@ -51,8 +51,8 @@ trocar/
 attack_surfaces / verified_findings / pending_hypotheses / exploits / failure_records
 
 ### 模型分级
-- 强模型（默认 claude-opus-5）: threat_model / bypass / deep_verify
-- 快模型（默认 claude-haiku-4-5）: strike
+- 默认模型（claude-sonnet-5）: 所有阶段统一使用
+- 通过思考强度（5级）控制推理深度和 token 消耗
 - 默认模型（默认 claude-sonnet-5）: 其余
 
 ### 思考强度（v2.0.0）

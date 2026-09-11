@@ -70,9 +70,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .msg.assistant{background:var(--bg2);box-shadow:var(--shadow-sm);color:var(--text);}.msg.user{background:var(--accent);color:#fff;margin-left:auto;}.msg.system{background:rgba(255,149,0,0.08);color:var(--warning);font-size:12px;text-align:center;max-width:100%;border-radius:var(--radius-xs);}.msg.error{background:rgba(255,59,48,0.08);color:var(--danger);font-size:12px;text-align:center;max-width:100%;border-radius:var(--radius-xs);border:1px solid rgba(255,59,48,0.15);}
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text3);}
 .empty-state h3{font-size:18px;font-weight:600;margin-bottom:4px;color:var(--text2);}.empty-state p{font-size:13px;}
-.input-bar{padding:12px 20px;border-top:0.5px solid var(--border);display:none;gap:8px;align-items:center;background:var(--bg2);}
-.input-bar input{flex:1;padding:9px 14px;border:1px solid var(--border);border-radius:20px;background:var(--bg);color:var(--text);font-size:13px;font-family:var(--font);outline:none;transition:border-color 0.15s;}
-.input-bar input:focus{border-color:var(--accent);}
+.input-bar{padding:10px 20px;border-top:0.5px solid var(--border);display:none;flex-direction:column;gap:6px;background:var(--bg2);}
+.input-row{display:flex;gap:8px;align-items:center;}
+.input-row input{flex:1;padding:9px 14px;border:1px solid var(--border);border-radius:20px;background:var(--bg);color:var(--text);font-size:13px;font-family:var(--font);outline:none;transition:border-color 0.15s;}
+.input-row input:focus{border-color:var(--accent);}
+.input-switches{display:flex;justify-content:space-between;align-items:center;}
+.model-switches{display:flex;gap:4px;}
+.mswitch{display:flex;align-items:center;gap:3px;padding:2px 7px;border:1px solid var(--border);border-radius:12px;background:var(--bg);cursor:pointer;font-size:11px;font-family:var(--font);color:var(--text);transition:all 0.15s;line-height:1.4;}
+.mswitch:hover{border-color:var(--accent);background:var(--bg3);}
+.ms-icon{font-size:11px;}.ms-val{font-weight:500;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .quick-chips{display:flex;gap:4px;}
 .chip{padding:5px 12px;background:var(--bg3);border:none;border-radius:16px;color:var(--text2);font-size:12px;font-family:var(--font);cursor:pointer;transition:all 0.12s;}.chip:hover{background:var(--border);color:var(--text);}
 .send-btn{width:34px;height:34px;border-radius:50%;border:none;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.15s;flex-shrink:0;}.send-btn:hover{background:var(--accent-hover);}
@@ -92,6 +98,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .form-group input:focus,.form-group textarea:focus{border-color:var(--accent);}
 .form-group textarea{min-height:60px;resize:vertical;}
 .form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:24px;}
+details[open]>summary #advArrow{transform:rotate(90deg);}
+details summary::-webkit-details-marker{display:none;}
 .form-row{display:flex;gap:12px;}.form-row .form-group{flex:1;}
 .hint{font-size:11px;color:var(--text3);margin-top:4px;}
 .content-wrap{position:relative;flex:1;display:flex;overflow:hidden;}
@@ -144,9 +152,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
       <div class="side-panel" id="blackboardPanel"><div class="panel-header"><h3>黑板状态</h3><button class="btn btn-ghost btn-icon" onclick="togglePanel('blackboard')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div class="panel-body"><div id="bbSummary"></div><div id="bbDetails"></div></div></div>
     </div>
     <div class="input-bar" id="inputBar">
-      <input type="text" id="userInput" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendMsg()">
-      <div class="quick-chips"><button class="chip" onclick="quickSend('深入')">深入</button><button class="chip" onclick="quickSend('换方向')">换方向</button><button class="chip" onclick="quickSend('写报告')">报告</button></div>
-      <button class="send-btn" onclick="sendMsg()"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+      <div class="input-row">
+        <input type="text" id="userInput" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendMsg()">
+        <button class="send-btn" onclick="sendMsg()"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+      </div>
+      <div class="input-switches">
+        <div class="quick-chips"><button class="chip" onclick="quickSend('深入')">深入</button><button class="chip" onclick="quickSend('换方向')">换方向</button><button class="chip" onclick="quickSend('写报告')">报告</button></div>
+        <div class="model-switches">
+          <button class="mswitch" onclick="cycleThinking()" title="思考强度（点击切换）"><span class="ms-icon">🧠</span><span class="ms-val" id="qsThinkingVal">Medium</span></button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -168,13 +183,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 <div class="modal-overlay" id="settingsModal"><div class="modal">
   <h2>设置</h2>
   <div class="form-group"><label>模型提供商</label><select id="setProvider"><option value="anthropic">Anthropic (Claude)</option><option value="openai">OpenAI</option><option value="openai">DeepSeek</option><option value="openai">通义千问 (Qwen)</option><option value="openai">智谱 GLM</option><option value="openai">Ollama (本地)</option><option value="openai">OpenAI 兼容 / 中转站</option></select></div>
-  <div class="form-row"><div class="form-group"><label>默认模型</label><input type="text" id="setModel" placeholder="claude-sonnet-5"></div><div class="form-group"><label>最大 Token</label><input type="number" id="setMaxTokens" placeholder="16384"></div></div>
-  <div class="form-row"><div class="form-group"><label>强模型（建模/验证）</label><input type="text" id="setModelStrong" placeholder="claude-opus-5"></div><div class="form-group"><label>快模型（打击）</label><input type="text" id="setModelFast" placeholder="claude-haiku-4-5-20251001"></div></div>
-  <div class="form-group"><label>思考强度</label><select id="setThinkingLevel"><option value="low">Low — 快速响应</option><option value="medium">Medium — 平衡（默认）</option><option value="high">High — 深度思考</option><option value="xhigh">XHigh — 更深度</option><option value="max">Max — 最大深度</option></select><div class="hint">控制模型思考深度，等级越高消耗 token 越多</div></div>
+  <div class="form-group"><label>默认模型</label><input type="text" id="setModel" placeholder="claude-sonnet-5"></div>
   <div class="form-group"><label>API Key</label><input type="password" id="setApiKey" placeholder="sk-ant-xxxxx 或 sk-xxxxx"><div class="hint" id="setApiKeyHint"></div></div>
   <div class="form-group"><label>Base URL（可选）</label><input type="text" id="setBaseUrl" placeholder="https://api.example.com/v1"><div class="hint">Anthropic 留空；兼容模式填第三方 API 地址</div></div>
-  <div class="form-row"><div class="form-group"><label>Burp 代理（可选）</label><input type="text" id="setBurpProxy" placeholder="http://127.0.0.1:8080"></div><div class="form-group"><label>最大并发</label><input type="number" id="setMaxConcurrent" placeholder="3" min="1" max="10"></div></div>
-  <div class="form-group"><label>Server酱 SendKey（可选）</label><input type="password" id="setServerchanKey" placeholder="SCT..."><div class="hint" id="setServerchanHint">填写后发现漏洞会推送到微信，从 <a href="https://sct.ftqq.com" target="_blank" style="color:var(--accent)">sct.ftqq.com</a> 获取</div></div>
+  <details id="advancedSettings" style="margin:12px 0;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0">
+    <summary style="padding:10px 14px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text-secondary);user-select:none;list-style:none;display:flex;align-items:center;gap:6px"><svg id="advArrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform .2s"><path d="M9 18l6-6-6-6"/></svg>高级选项</summary>
+    <div style="padding:4px 14px 14px">
+      <div class="form-group"><label>思考强度</label><select id="setThinkingLevel"><option value="low">Low — 快速响应</option><option value="medium">Medium — 平衡（默认）</option><option value="high">High — 深度思考</option><option value="xhigh">XHigh — 更深度</option><option value="max">Max — 最大深度</option></select><div class="hint">控制模型思考深度，等级越高消耗 token 越多</div></div>
+      <div class="form-group"><label>最大 Token</label><input type="number" id="setMaxTokens" placeholder="16384"></div>
+      <div class="form-row"><div class="form-group"><label>Burp 代理（可选）</label><input type="text" id="setBurpProxy" placeholder="http://127.0.0.1:8080"></div><div class="form-group"><label>最大并发</label><input type="number" id="setMaxConcurrent" placeholder="3" min="1" max="10"></div></div>
+      <div class="form-group"><label>Server酱 SendKey（可选）</label><input type="password" id="setServerchanKey" placeholder="SCT..."><div class="hint" id="setServerchanHint">填写后发现漏洞会推送到微信，从 <a href="https://sct.ftqq.com" target="_blank" style="color:var(--accent)">sct.ftqq.com</a> 获取</div></div>
+    </div>
+  </details>
   <div class="form-actions"><button class="btn btn-secondary" onclick="hideSettingsModal()">取消</button><button class="btn btn-secondary" id="btnSpeedtest" onclick="runSpeedtest()">测速</button><button class="btn btn-primary" onclick="saveSettings()">保存</button></div>
   <div id="settingsStatus" style="margin-top:8px;font-size:12px;line-height:1.5;min-height:20px"></div>
 </div></div>
@@ -316,14 +336,14 @@ function hideSkillModal(){document.getElementById('skillModal').classList.remove
 function loadSkillFile(input){if(!input.files[0])return;const reader=new FileReader();reader.onload=e=>{document.getElementById('skillEditor').value=e.target.result;};reader.readAsText(input.files[0]);input.value='';}
 async function saveSkill(){const content=document.getElementById('skillEditor').value;await fetch(API+'/api/skill',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({content})});hideSkillModal();}
 
-async function showSettingsModal(){const s=await(await fetch(API+'/api/settings')).json();document.getElementById('setProvider').value=s.provider||'anthropic';document.getElementById('setModel').value=s.model||'';document.getElementById('setMaxTokens').value=s.max_tokens||16384;document.getElementById('setModelStrong').value=s.model_strong||'';document.getElementById('setModelFast').value=s.model_fast||'';document.getElementById('setThinkingLevel').value=s.thinking_level||'medium';document.getElementById('setApiKey').value='';document.getElementById('setApiKeyHint').textContent=s.api_key?'已配置（输入新值覆盖）':'未配置';document.getElementById('setBaseUrl').value=s.base_url||'';document.getElementById('setBurpProxy').value=s.burp_proxy||'';document.getElementById('setMaxConcurrent').value=s.max_concurrent||3;document.getElementById('setServerchanKey').value='';document.getElementById('setServerchanHint').innerHTML=s.serverchan_key_masked&&s.serverchan_key_masked!=='****'?'已配置（输入新值覆盖）':'填写后发现漏洞会推送到微信，从 <a href="https://sct.ftqq.com" target="_blank" style="color:var(--accent)">sct.ftqq.com</a> 获取';document.getElementById('settingsModal').classList.add('show');}
+async function showSettingsModal(){const s=await(await fetch(API+'/api/settings')).json();document.getElementById('setProvider').value=s.provider||'anthropic';document.getElementById('setModel').value=s.model||'';document.getElementById('setMaxTokens').value=s.max_tokens||16384;document.getElementById('setThinkingLevel').value=s.thinking_level||'medium';document.getElementById('setApiKey').value='';document.getElementById('setApiKeyHint').textContent=s.api_key?'已配置（输入新值覆盖）':'未配置';document.getElementById('setBaseUrl').value=s.base_url||'';document.getElementById('setBurpProxy').value=s.burp_proxy||'';document.getElementById('setMaxConcurrent').value=s.max_concurrent||3;document.getElementById('setServerchanKey').value='';document.getElementById('setServerchanHint').innerHTML=s.serverchan_key_masked&&s.serverchan_key_masked!=='****'?'已配置（输入新值覆盖）':'填写后发现漏洞会推送到微信，从 <a href="https://sct.ftqq.com" target="_blank" style="color:var(--accent)">sct.ftqq.com</a> 获取';document.getElementById('settingsModal').classList.add('show');}
 function hideSettingsModal(){document.getElementById('settingsModal').classList.remove('show');}
 async function saveSettings(){
   const status=document.getElementById('settingsStatus');
-  const body={provider:document.getElementById('setProvider').value,model:document.getElementById('setModel').value,max_tokens:parseInt(document.getElementById('setMaxTokens').value)||16384,model_strong:document.getElementById('setModelStrong').value,model_fast:document.getElementById('setModelFast').value,thinking_level:document.getElementById('setThinkingLevel').value,base_url:document.getElementById('setBaseUrl').value,burp_proxy:document.getElementById('setBurpProxy').value,max_concurrent:parseInt(document.getElementById('setMaxConcurrent').value)||3};
+  const body={provider:document.getElementById('setProvider').value,model:document.getElementById('setModel').value,max_tokens:parseInt(document.getElementById('setMaxTokens').value)||16384,thinking_level:document.getElementById('setThinkingLevel').value,base_url:document.getElementById('setBaseUrl').value,burp_proxy:document.getElementById('setBurpProxy').value,max_concurrent:parseInt(document.getElementById('setMaxConcurrent').value)||3};
   const key=document.getElementById('setApiKey').value.trim();if(key)body.api_key=key;
   const scKey=document.getElementById('setServerchanKey').value.trim();if(scKey)body.serverchan_key=scKey;
-  try{const r=await fetch(API+'/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok)throw new Error(await r.text());status.innerHTML='<span style="color:var(--green)">设置已保存</span>';setTimeout(()=>{status.innerHTML='';hideSettingsModal();},1200);}catch(e){status.innerHTML='<span style="color:var(--red)">保存失败: '+e.message+'</span>';}
+  try{const r=await fetch(API+'/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok)throw new Error(await r.text());status.innerHTML='<span style="color:var(--green)">设置已保存</span>';loadQuickSwitches();setTimeout(()=>{status.innerHTML='';hideSettingsModal();},1200);}catch(e){status.innerHTML='<span style="color:var(--red)">保存失败: '+e.message+'</span>';}
 }
 
 async function runSpeedtest(){
@@ -332,7 +352,7 @@ async function runSpeedtest(){
   if(!model){status.innerHTML='<span style="color:var(--red)">请先填写默认模型</span>';return;}
   btn.disabled=true;btn.textContent='测速中...';status.innerHTML='<span style="color:var(--text-secondary)">正在保存并连接 '+model+' ...</span>';
   try{
-    const body={provider:document.getElementById('setProvider').value,model:model,max_tokens:parseInt(document.getElementById('setMaxTokens').value)||16384,model_strong:document.getElementById('setModelStrong').value,model_fast:document.getElementById('setModelFast').value,thinking_level:document.getElementById('setThinkingLevel').value,base_url:document.getElementById('setBaseUrl').value,burp_proxy:document.getElementById('setBurpProxy').value,max_concurrent:parseInt(document.getElementById('setMaxConcurrent').value)||3};
+    const body={provider:document.getElementById('setProvider').value,model:model,max_tokens:parseInt(document.getElementById('setMaxTokens').value)||16384,thinking_level:document.getElementById('setThinkingLevel').value,base_url:document.getElementById('setBaseUrl').value,burp_proxy:document.getElementById('setBurpProxy').value,max_concurrent:parseInt(document.getElementById('setMaxConcurrent').value)||3};
     const key=document.getElementById('setApiKey').value.trim();if(key)body.api_key=key;
     const scKey=document.getElementById('setServerchanKey').value.trim();if(scKey)body.serverchan_key=scKey;
     const sr=await fetch(API+'/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
@@ -344,6 +364,20 @@ async function runSpeedtest(){
     else{status.innerHTML='<span style="color:var(--red)">连接失败: '+d.error+'</span>';}
   }catch(e){status.innerHTML='<span style="color:var(--red)">请求失败: '+e.message+'</span>';}
   btn.disabled=false;btn.textContent='测速';
+}
+
+const THINKING_LEVELS=['low','medium','high','xhigh','max'];
+const THINKING_LABELS={low:'Low',medium:'Medium',high:'High',xhigh:'XHigh',max:'Max'};
+async function loadQuickSwitches(){
+  try{const s=await(await fetch(API+'/api/settings')).json();
+    document.getElementById('qsThinkingVal').textContent=THINKING_LABELS[s.thinking_level]||'Medium';
+  }catch(e){}
+}
+async function cycleThinking(){
+  const el=document.getElementById('qsThinkingVal');const cur=Object.keys(THINKING_LABELS).find(k=>THINKING_LABELS[k]===el.textContent)||'medium';
+  const next=THINKING_LEVELS[(THINKING_LEVELS.indexOf(cur)+1)%THINKING_LEVELS.length];
+  el.textContent=THINKING_LABELS[next];
+  await fetch(API+'/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({thinking_level:next})});
 }
 
 function startRenameGroup(oldName){
@@ -361,7 +395,7 @@ function applyTheme(m){document.documentElement.removeAttribute('data-theme');if
 function toggleTheme(){const o=['light','dark','system'];const c=getStoredTheme();const n=o[(o.indexOf(c)+1)%3];localStorage.setItem('vh-theme',n);applyTheme(n);}
 applyTheme(getStoredTheme());
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(getStoredTheme()==='system')applyTheme('system');});
-fetchSessions();setInterval(fetchSessions,10000);
+fetchSessions();loadQuickSwitches();setInterval(fetchSessions,10000);
 </script>
 </body>
 </html>

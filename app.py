@@ -359,7 +359,7 @@ async def get_settings():
 async def update_settings(request: Request):
     body = await request.json()
     current = cfg.load()
-    for k in ("provider", "model", "model_strong", "model_fast", "base_url", "max_tokens", "burp_proxy", "max_concurrent", "thinking_level"):
+    for k in ("provider", "model", "base_url", "max_tokens", "burp_proxy", "max_concurrent", "thinking_level"):
         if k in body:
             current[k] = body[k]
     if "api_key" in body and body["api_key"] and not body["api_key"].startswith("****"):
