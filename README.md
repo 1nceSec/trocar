@@ -50,23 +50,23 @@ pip install -r requirements.txt
 python app.py
 ```
 
-浏览器打开 **http://127.0.0.1:8899** ，首次访问会引导你填写 API Key。
+浏览器打开 **http://127.0.0.1:9899** ，首次访问会引导你填写 API Key。
 
 ### 方式二：Docker（推荐）
 
 拉取并启动：
 
 ```bash
-docker run -d --name trocar -p 8899:8899 -v trocar-data:/app/data ox1dq/trocar:latest
+docker run -d --name trocar -p 9899:9899 -v trocar-data:/app/data ox1dq/trocar:latest
 ```
 
 局域网访问（允许其他设备连接）：
 
 ```bash
-docker run -d --name trocar -p 8899:8899 -v trocar-data:/app/data -e HOST=0.0.0.0 ox1dq/trocar:latest
+docker run -d --name trocar -p 9899:9899 -v trocar-data:/app/data -e HOST=0.0.0.0 ox1dq/trocar:latest
 ```
 
-浏览器打开 http://127.0.0.1:8899
+浏览器打开 http://127.0.0.1:9899
 
 查看日志：
 
@@ -89,7 +89,7 @@ services:
   trocar:
     image: ox1dq/trocar:latest
     ports:
-      - "8899:8899"
+      - "9899:9899"
     volumes:
       - trocar-data:/app/data
     restart: unless-stopped
@@ -108,7 +108,7 @@ docker compose up -d
 ```
 1. 从 Releases 下载 ZIP 并解压
 2. 双击 start.bat
-3. 浏览器打开 http://127.0.0.1:8899
+3. 浏览器打开 http://127.0.0.1:9899
 ```
 
 ## 更新升级
@@ -142,7 +142,7 @@ docker rm trocar
 用新镜像启动：
 
 ```bash
-docker run -d --name trocar -p 8899:8899 -v trocar-data:/app/data ox1dq/trocar:latest
+docker run -d --name trocar -p 9899:9899 -v trocar-data:/app/data ox1dq/trocar:latest
 ```
 
 Docker Compose 用户：
@@ -178,7 +178,7 @@ docker compose up -d
 | `MAX_TURNS` | 最大对话轮次 | 200 |
 | `NO_FINDING_STOP` | 连续无发现自动停止轮次 | 8 |
 | `HOST` | 监听地址 | 127.0.0.1 |
-| `PORT` | 监听端口 | 8899 |
+| `PORT` | 监听端口 | 9899 |
 
 ### Web 设置（运行时）
 

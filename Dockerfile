@@ -9,9 +9,9 @@ COPY . .
 
 RUN mkdir -p data
 
-EXPOSE 8899
+EXPOSE 9899
 
 ENV HOST=0.0.0.0
-ENV PORT=8899
+ENV PORT=9899
 
 CMD ["python", "app.py"]

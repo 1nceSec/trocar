@@ -175,7 +175,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   <div class="form-group"><label>Base URL（可选）</label><input type="text" id="setBaseUrl" placeholder="https://api.example.com/v1"><div class="hint">Anthropic 留空；兼容模式填第三方 API 地址</div></div>
   <div class="form-row"><div class="form-group"><label>Burp 代理（可选）</label><input type="text" id="setBurpProxy" placeholder="http://127.0.0.1:8080"></div><div class="form-group"><label>最大并发</label><input type="number" id="setMaxConcurrent" placeholder="3" min="1" max="10"></div></div>
   <div class="form-group"><label>Server酱 SendKey（可选）</label><input type="password" id="setServerchanKey" placeholder="SCT..."><div class="hint" id="setServerchanHint">填写后发现漏洞会推送到微信，从 <a href="https://sct.ftqq.com" target="_blank" style="color:var(--accent)">sct.ftqq.com</a> 获取</div></div>
-  <div class="form-actions"><button class="btn btn-secondary" onclick="hideSettingsModal()">取消</button><button class="btn btn-primary" onclick="saveSettings()">保存</button></div>
+  <div class="form-actions"><button class="btn btn-secondary" onclick="hideSettingsModal()">取消</button><button class="btn btn-secondary" id="btnSpeedtest" onclick="runSpeedtest()">测速</button><button class="btn btn-primary" onclick="saveSettings()">保存</button></div>
+  <div id="settingsStatus" style="margin-top:8px;font-size:12px;line-height:1.5;min-height:20px"></div>
 </div></div>
 <!-- SPLIT_MARKER_SCRIPT -->
 <script>
@@ -318,10 +319,31 @@ async function saveSkill(){const content=document.getElementById('skillEditor').
 async function showSettingsModal(){const s=await(await fetch(API+'/api/settings')).json();document.getElementById('setProvider').value=s.provider||'anthropic';document.getElementById('setModel').value=s.model||'';document.getElementById('setMaxTokens').value=s.max_tokens||16384;document.getElementById('setModelStrong').value=s.model_strong||'';document.getElementById('setModelFast').value=s.model_fast||'';document.getElementById('setThinkingLevel').value=s.thinking_level||'medium';document.getElementById('setApiKey').value='';document.getElementById('setApiKeyHint').textContent=s.api_key?'已配置（输入新值覆盖）':'未配置';document.getElementById('setBaseUrl').value=s.base_url||'';document.getElementById('setBurpProxy').value=s.burp_proxy||'';document.getElementById('setMaxConcurrent').value=s.max_concurrent||3;document.getElementById('setServerchanKey').value='';document.getElementById('setServerchanHint').innerHTML=s.serverchan_key_masked&&s.serverchan_key_masked!=='****'?'已配置（输入新值覆盖）':'填写后发现漏洞会推送到微信，从 <a href="https://sct.ftqq.com" target="_blank" style="color:var(--accent)">sct.ftqq.com</a> 获取';document.getElementById('settingsModal').classList.add('show');}
 function hideSettingsModal(){document.getElementById('settingsModal').classList.remove('show');}
 async function saveSettings(){
+  const status=document.getElementById('settingsStatus');
   const body={provider:document.getElementById('setProvider').value,model:document.getElementById('setModel').value,max_tokens:parseInt(document.getElementById('setMaxTokens').value)||16384,model_strong:document.getElementById('setModelStrong').value,model_fast:document.getElementById('setModelFast').value,thinking_level:document.getElementById('setThinkingLevel').value,base_url:document.getElementById('setBaseUrl').value,burp_proxy:document.getElementById('setBurpProxy').value,max_concurrent:parseInt(document.getElementById('setMaxConcurrent').value)||3};
   const key=document.getElementById('setApiKey').value.trim();if(key)body.api_key=key;
   const scKey=document.getElementById('setServerchanKey').value.trim();if(scKey)body.serverchan_key=scKey;
-  await fetch(API+'/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});hideSettingsModal();
+  try{const r=await fetch(API+'/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok)throw new Error(await r.text());status.innerHTML='<span style="color:var(--green)">设置已保存</span>';setTimeout(()=>{status.innerHTML='';hideSettingsModal();},1200);}catch(e){status.innerHTML='<span style="color:var(--red)">保存失败: '+e.message+'</span>';}
+}
+
+async function runSpeedtest(){
+  const status=document.getElementById('settingsStatus');const btn=document.getElementById('btnSpeedtest');
+  const model=document.getElementById('setModel').value.trim();
+  if(!model){status.innerHTML='<span style="color:var(--red)">请先填写默认模型</span>';return;}
+  btn.disabled=true;btn.textContent='测速中...';status.innerHTML='<span style="color:var(--text-secondary)">正在保存并连接 '+model+' ...</span>';
+  try{
+    const body={provider:document.getElementById('setProvider').value,model:model,max_tokens:parseInt(document.getElementById('setMaxTokens').value)||16384,model_strong:document.getElementById('setModelStrong').value,model_fast:document.getElementById('setModelFast').value,thinking_level:document.getElementById('setThinkingLevel').value,base_url:document.getElementById('setBaseUrl').value,burp_proxy:document.getElementById('setBurpProxy').value,max_concurrent:parseInt(document.getElementById('setMaxConcurrent').value)||3};
+    const key=document.getElementById('setApiKey').value.trim();if(key)body.api_key=key;
+    const scKey=document.getElementById('setServerchanKey').value.trim();if(scKey)body.serverchan_key=scKey;
+    const sr=await fetch(API+'/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!sr.ok)throw new Error('保存失败');
+    status.innerHTML='<span style="color:var(--text-secondary)">设置已保存，正在测速 '+model+' ...</span>';
+    const r=await fetch(API+'/api/speedtest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model})});
+    const d=await r.json();
+    if(d.ok){status.innerHTML='<span style="color:var(--green)">'+model+' — 首 Token '+d.ttft_ms+'ms / '+d.tps+' tok/s / 总耗时 '+d.total_ms+'ms</span>';}
+    else{status.innerHTML='<span style="color:var(--red)">连接失败: '+d.error+'</span>';}
+  }catch(e){status.innerHTML='<span style="color:var(--red)">请求失败: '+e.message+'</span>';}
+  btn.disabled=false;btn.textContent='测速';
 }
 
 function startRenameGroup(oldName){

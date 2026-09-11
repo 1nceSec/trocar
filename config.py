@@ -30,4 +30,4 @@ MAX_TURNS = int(os.getenv("MAX_TURNS", "200"))
 NO_FINDING_STOP = int(os.getenv("NO_FINDING_STOP", "8"))
 
 HOST = os.getenv("HOST", "127.0.0.1")
-PORT = int(os.getenv("PORT", "8899"))
+PORT = int(os.getenv("PORT", "9899"))

@@ -141,7 +141,14 @@ async def _chat_openai(api_key, base_url, model, max_tokens, system, messages, u
             for t in TOOL_DEFINITIONS
         ]
 
-    response = await client.chat.completions.create(**call_kwargs)
+    try:
+        response = await client.chat.completions.create(**call_kwargs)
+    except Exception:
+        if "reasoning_effort" in call_kwargs:
+            call_kwargs.pop("reasoning_effort")
+            response = await client.chat.completions.create(**call_kwargs)
+        else:
+            raise
     choice = response.choices[0]
 
     tool_calls = []

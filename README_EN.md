@@ -50,23 +50,23 @@ pip install -r requirements.txt
 python app.py
 ```
 
-Open **http://127.0.0.1:8899** in your browser. First launch will guide you through API Key setup.
+Open **http://127.0.0.1:9899** in your browser. First launch will guide you through API Key setup.
 
 ### Option 2: Docker
 
 Pull and run:
 
 ```bash
-docker run -d --name trocar -p 8899:8899 -v trocar-data:/app/data ox1dq/trocar:latest
+docker run -d --name trocar -p 9899:9899 -v trocar-data:/app/data ox1dq/trocar:latest
 ```
 
 LAN access (allow connections from other devices):
 
 ```bash
-docker run -d --name trocar -p 8899:8899 -v trocar-data:/app/data -e HOST=0.0.0.0 ox1dq/trocar:latest
+docker run -d --name trocar -p 9899:9899 -v trocar-data:/app/data -e HOST=0.0.0.0 ox1dq/trocar:latest
 ```
 
-Open **http://127.0.0.1:8899** in your browser.
+Open **http://127.0.0.1:9899** in your browser.
 
 View logs:
 
@@ -89,7 +89,7 @@ services:
   trocar:
     image: ox1dq/trocar:latest
     ports:
-      - "8899:8899"
+      - "9899:9899"
     volumes:
       - trocar-data:/app/data
     restart: unless-stopped
@@ -108,7 +108,7 @@ docker compose up -d
 ```
 1. Download and extract the ZIP from Releases
 2. Double-click start.bat
-3. Open http://127.0.0.1:8899
+3. Open http://127.0.0.1:9899
 ```
 
 ## Upgrading
@@ -142,7 +142,7 @@ docker rm trocar
 Start with the new image:
 
 ```bash
-docker run -d --name trocar -p 8899:8899 -v trocar-data:/app/data ox1dq/trocar:latest
+docker run -d --name trocar -p 9899:9899 -v trocar-data:/app/data ox1dq/trocar:latest
 ```
 
 Docker Compose users:
@@ -178,7 +178,7 @@ docker compose up -d
 | `MAX_TURNS` | Max conversation turns | 200 |
 | `NO_FINDING_STOP` | Auto-stop after N rounds without findings | 8 |
 | `HOST` | Listen address | 127.0.0.1 |
-| `PORT` | Listen port | 8899 |
+| `PORT` | Listen port | 9899 |
 
 ### Web UI Settings (Runtime)
 

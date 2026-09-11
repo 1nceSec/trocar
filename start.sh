@@ -28,5 +28,5 @@ source venv/bin/activate
 echo "[Trocar] Installing dependencies..."
 pip install -r requirements.txt -q 2>/dev/null
 
-echo "[Trocar] Starting server at http://127.0.0.1:8899"
+echo "[Trocar] Starting server at http://127.0.0.1:9899"
 python app.py
