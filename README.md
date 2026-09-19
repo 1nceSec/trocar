@@ -17,7 +17,7 @@ Trocar 是一个 AI 自主渗透测试系统。给它一个 URL，它会自动�
 
 五阶段「外科手术」模式：**威胁建模 → 精准打击 → 深度反思 → 绕过探索 → 深度验证**
 
-> 本项目通过 AI Vibe Coding 构建，架构设计参考了 [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent)（Planner-Executor-Reflector 模式）。
+> 独立设计实现，开发过程结合 AI 辅助。架构参考 [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent) 的 Planner-Executor-Reflector 模式，扩展为五阶段流水线与黑板记忆。
 
 <div align="center">
   <img src="Trocar.png" alt="Trocar UI" width="900">

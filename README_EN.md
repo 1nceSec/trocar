@@ -17,7 +17,7 @@ Trocar is an autonomous penetration testing system powered by AI. Give it a URL,
 
 Five-phase "surgeon mode": **Threat Modeling → Precision Strike → Deep Reflection → Bypass → Deep Verification**
 
-Built with AI Vibe Coding. Architecture inspired by [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent) (Planner-Executor-Reflector pattern).
+Independently designed and implemented, with AI-assisted development. Architecture inspired by [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent) (Planner-Executor-Reflector pattern), extended with a five-phase pipeline and blackboard memory.
 
 <div align="center">
   <img src="Trocar.png" alt="Trocar UI" width="900">
