@@ -57,6 +57,7 @@ Open **http://127.0.0.1:9899** in your browser. First launch will guide you thro
 Pull and run:
 
 ```bash
+docker pull ox1dq/trocar:latest
 docker run -d --name trocar -p 9899:9899 -v trocar-data:/app/data ox1dq/trocar:latest
 ```
 

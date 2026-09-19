@@ -57,6 +57,7 @@ python app.py
 拉取并启动：
 
 ```bash
+docker pull ox1dq/trocar:latest
 docker run -d --name trocar -p 9899:9899 -v trocar-data:/app/data ox1dq/trocar:latest
 ```
 
