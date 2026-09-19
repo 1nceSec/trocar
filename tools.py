@@ -144,6 +144,18 @@ def _check_command_safety(command: str) -> str | None:
     return None
 
 
+def _is_under(path: Path, root: Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+        return True
+    except (ValueError, OSError):
+        return False
+
+
+def _allowed_read(path: Path) -> bool:
+    return _is_under(path, BASE_DIR) or _is_under(path, TEMP_DIR)
+
+
 async def execute_command(command: str, timeout: int = 30, cwd: str | None = None) -> dict:
     block_reason = _check_command_safety(command)
     if block_reason:
@@ -191,6 +203,8 @@ async def execute_command(command: str, timeout: int = 30, cwd: str | None = Non
 async def read_file(path: str, max_lines: int = 200) -> dict:
     try:
         p = Path(path)
+        if not _allowed_read(p):
+            return {"success": False, "error": f"Path not allowed: {path}"}
         if not p.exists():
             return {"success": False, "error": f"File not found: {path}"}
         if not p.is_file():
@@ -234,6 +248,8 @@ async def write_file(path: str, content: str, sandbox_root: str | None = None) -
 async def list_directory(path: str) -> dict:
     try:
         p = Path(path)
+        if not _allowed_read(p):
+            return {"success": False, "error": f"Path not allowed: {path}"}
         if not p.exists():
             return {"success": False, "error": f"Directory not found: {path}"}
         if not p.is_dir():
@@ -297,3 +313,9 @@ async def dispatch_tool(name: str, input_data: dict, session_cwd: str | None = N
         result = {"success": False, "error": f"Unknown tool: {name}"}
 
     return json.dumps(result, ensure_ascii=False, default=str)
+
+
+if __name__ == "__main__":
+    assert _allowed_read(BASE_DIR / "app.py")
+    assert not _allowed_read(Path.home() / ".grok" / "config.toml")
+    print("ok")

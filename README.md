@@ -272,6 +272,9 @@ trocar/
 | GET | `/api/sessions` | 列出所有会话 |
 | GET | `/api/sessions/{id}` | 获取会话详情 |
 | POST | `/api/sessions/{id}/stop` | 停止会话 |
+| POST | `/api/sessions/{id}/pause` | 暂停会话 |
+| POST | `/api/sessions/{id}/resume` | 恢复会话 |
+| PUT | `/api/sessions/{id}/group` | 设置会话分组 |
 | DELETE | `/api/sessions/{id}` | 删除会话 |
 | POST | `/api/sessions/{id}/input` | 发送用户消息 |
 | GET | `/api/sessions/{id}/findings` | 获取漏洞列表 |
@@ -280,8 +283,13 @@ trocar/
 | GET | `/api/sessions/{id}/logs` | 获取对话日志 |
 | GET | `/api/sessions/{id}/report` | 导出 Markdown 报告 |
 | GET | `/api/sessions/{id}/handoff` | 生成交接文档（会话恢复） |
+| GET | `/api/groups` | 列出分组 |
+| GET | `/api/health` | 健康检查 |
 | GET | `/api/settings` | 获取设置 |
 | PUT | `/api/settings` | 更新设置 |
+| POST | `/api/speedtest` | 模型测速 |
+| GET | `/api/skill` | 获取 Skill |
+| PUT | `/api/skill` | 更新 Skill |
 | WS | `/ws/{id}` | WebSocket 实时推送 |
 
 ## 致谢

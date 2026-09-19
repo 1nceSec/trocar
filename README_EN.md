@@ -272,6 +272,9 @@ After a test session ends, you can generate a handoff document with one click, e
 | GET | `/api/sessions` | List all sessions |
 | GET | `/api/sessions/{id}` | Get session details |
 | POST | `/api/sessions/{id}/stop` | Stop session |
+| POST | `/api/sessions/{id}/pause` | Pause session |
+| POST | `/api/sessions/{id}/resume` | Resume session |
+| PUT | `/api/sessions/{id}/group` | Set session group |
 | DELETE | `/api/sessions/{id}` | Delete session |
 | POST | `/api/sessions/{id}/input` | Send user message |
 | GET | `/api/sessions/{id}/findings` | Get vulnerability list |
@@ -280,15 +283,16 @@ After a test session ends, you can generate a handoff document with one click, e
 | GET | `/api/sessions/{id}/logs` | Get conversation logs |
 | GET | `/api/sessions/{id}/report` | Export Markdown report |
 | GET | `/api/sessions/{id}/handoff` | Generate handoff document (session resume) |
+| GET | `/api/groups` | List groups |
+| GET | `/api/health` | Health check |
 | GET | `/api/settings` | Get settings |
 | PUT | `/api/settings` | Update settings |
+| POST | `/api/speedtest` | Model speed test |
+| GET | `/api/skill` | Get Skill |
+| PUT | `/api/skill` | Update Skill |
 | WS | `/ws/{id}` | WebSocket real-time push |
 
 ## Acknowledgements
-
-- [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent) — Architecture inspiration (Planner-Executor-Reflector pattern)
-
-## Acknowledgments
 
 - [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent) — Architecture inspiration (Planner-Executor-Reflector pattern)
 

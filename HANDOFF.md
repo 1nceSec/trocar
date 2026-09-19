@@ -6,7 +6,7 @@ AI 驱动的自动化渗透测试平台，给一个 URL 自动完成 JS 分析�
 
 - GitHub: https://github.com/1nceSec/trocar
 - Docker Hub: ox1dq/trocar
-- 当前版本: v2.0.0
+- 当前版本: v2.1.1
 - 技术栈: Python + FastAPI + SQLite + WebSocket + Jinja2 单文件前端
 
 ## 版本历史
@@ -21,6 +21,8 @@ AI 驱动的自动化渗透测试平台，给一个 URL 自动完成 JS 分析�
 | v1.3.1 | 全新 UI（毛玻璃/暗色模式/行内重命名/侧滑面板） |
 | v1.3.2 | Server酱推送、Skill上传、API异常监测 |
 | v2.0.0 | 项目更名 Trocar、多提供商 Setup、思考强度调节、默认模型更新 |
+| v2.1.0 | 思考强度快捷切换、模型测速、端口 9899、移除模型分级 |
+| v2.1.1 | FINDING 验证状态落库、启动脚本走浏览器引导、首次自动创建 data 目录、补 openai 依赖与 LICENSE |
 
 ## 架构关键文件
 
@@ -50,10 +52,9 @@ trocar/
 ### 黑板五分区
 attack_surfaces / verified_findings / pending_hypotheses / exploits / failure_records
 
-### 模型分级
-- 默认模型（claude-sonnet-5）: 所有阶段统一使用
-- 通过思考强度（5级）控制推理深度和 token 消耗
-- 默认模型（默认 claude-sonnet-5）: 其余
+### 模型
+- 所有阶段统一使用当前设置的模型（默认 claude-sonnet-5）
+- 通过思考强度（5 级）控制推理深度和 token 消耗
 
 ### 思考强度（v2.0.0）
 - Anthropic: `thinking.budget_tokens`，5 级（low=2048 / medium=8192 / high=32768 / xhigh=65536 / max=128000）

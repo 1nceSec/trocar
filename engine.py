@@ -311,6 +311,7 @@ async def _ai_loop(sid: int, messages: list[dict], system_prompt: str, start_tur
                 fid = await db.add_finding(
                     sid, f["severity"], f["title"], f["vuln_type"], f["endpoint"],
                     poc=poc, description=desc or full_text[:500],
+                    verified=verified,
                 )
                 if not has_real_request:
                     await bus.publish(sid, "stream", {

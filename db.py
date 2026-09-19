@@ -60,10 +60,15 @@ CREATE TABLE IF NOT EXISTS blackboard (
 
 
 async def init_db():
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     async with aiosqlite.connect(DB_PATH) as conn:
         await conn.executescript(SCHEMA)
         try:
             await conn.execute("ALTER TABLE sessions ADD COLUMN group_name TEXT DEFAULT ''")
+        except Exception:
+            pass
+        try:
+            await conn.execute("ALTER TABLE findings ADD COLUMN verified INTEGER DEFAULT 0")
         except Exception:
             pass
         await conn.commit()
@@ -135,12 +140,13 @@ async def list_groups() -> list[str]:
 
 
 async def add_finding(session_id: int, severity: str, title: str, vuln_type: str,
-                      endpoint: str = "", poc: str = "", description: str = "", chain: str = "") -> int:
+                      endpoint: str = "", poc: str = "", description: str = "", chain: str = "",
+                      verified: int = 0) -> int:
     async with aiosqlite.connect(DB_PATH) as conn:
         cur = await conn.execute(
-            "INSERT INTO findings (session_id, severity, title, vuln_type, endpoint, poc, description, chain) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (session_id, severity, title, vuln_type, endpoint, poc, description, chain),
+            "INSERT INTO findings (session_id, severity, title, vuln_type, endpoint, poc, description, chain, verified) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (session_id, severity, title, vuln_type, endpoint, poc, description, chain, verified),
         )
         await conn.execute(
             "UPDATE sessions SET findings_count = findings_count + 1, updated_at=CURRENT_TIMESTAMP WHERE id=?",

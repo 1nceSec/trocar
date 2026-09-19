@@ -1,17 +1,19 @@
 import asyncio
 import json
+import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 import db
 import engine
 import settings as cfg
-from config import HOST, PORT
+from config import HOST, PORT, SKILL_FILE
 from events import bus
+from llm import stream_text
 
 
 @asynccontextmanager
@@ -250,7 +252,6 @@ async def export_report(sid: int):
         lines.append("当前未发现高危漏洞，建议持续进行安全测试。")
     lines.append("")
 
-    from fastapi.responses import PlainTextResponse
     return PlainTextResponse(
         "\n".join(lines),
         media_type="text/markdown; charset=utf-8",
@@ -330,7 +331,6 @@ async def generate_handoff(sid: int):
 
     lines.append("")
 
-    from fastapi.responses import PlainTextResponse
     return PlainTextResponse(
         "\n".join(lines),
         media_type="text/markdown; charset=utf-8",
@@ -372,8 +372,6 @@ async def update_settings(request: Request):
 
 @app.post("/api/speedtest")
 async def speedtest(request: Request):
-    import time
-    from llm import stream_text
     body = await request.json()
     model_name = body.get("model", "")
     s = cfg.load()
@@ -416,7 +414,6 @@ async def speedtest(request: Request):
 
 @app.get("/api/skill")
 async def get_skill():
-    from config import SKILL_FILE
     content = ""
     if SKILL_FILE.exists():
         content = SKILL_FILE.read_text(encoding="utf-8")
@@ -425,7 +422,6 @@ async def get_skill():
 
 @app.put("/api/skill")
 async def update_skill(request: Request):
-    from config import SKILL_FILE
     body = await request.json()
     content = body.get("content", "")
     if not content.strip():
