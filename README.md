@@ -17,7 +17,7 @@ Trocar 是一个 AI 自主渗透测试系统。给它一个 URL，它会自动�
 
 五阶段「外科手术」模式：**威胁建模 → 精准打击 → 深度反思 → 绕过探索 → 深度验证**
 
-> 独立设计实现，开发过程结合 AI 辅助。架构参考 [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent) 的 Planner-Executor-Reflector 模式，扩展为五阶段流水线与黑板记忆。
+> 独立设计实现，开发过程结合 AI 辅助。决策循环参考 [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent) 的 Planner-Executor-Reflector；黑板记忆与「认 A 打 B」攻击链吸收了相关文章与实战思路。本项目将其落地为五阶段流水线、渗透场景五分区持久化黑板，以及按特征按需加载的知识库与链式升级规则。
 
 <div align="center">
   <img src="Trocar.png" alt="Trocar UI" width="900">
@@ -292,9 +292,23 @@ trocar/
 | PUT | `/api/skill` | 更新 Skill |
 | WS | `/ws/{id}` | WebSocket 实时推送 |
 
+## 灵感与差异
+
+Trocar 把几类已有思路做成可运行的渗透 Agent，而不是从零发明方法论。
+
+| 灵感 / 参考 | Trocar 进一步做了什么 |
+|---|---|
+| [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent) 的 Planner-Executor-Reflector | 不用多角色多模型协同，改为**单模型六视角轮转**；把循环展开成威胁建模 → 精准打击 → 深挖反思 → 绕过探索 → 深度验证**五阶段流水线** |
+| 经典黑板（共享工作区：多方往同一块记忆读写） | 按渗透测试切成**五分区**（攻击面 / 已验证发现 / 待验证假设 / 利用原语 / 失败记录），**SQLite 持久化**，每轮注入摘要；失败记录用来避免重复探测 |
+| 打穿短表（「认 A 打 B」的攻击链经验） | 压成 **12 条可注入规则**，与 38 条特征映射、34 个知识库模块**按需加载**绑定；只在**验证铁律**通过（真实 HTTP 证据）之后才升级，避免未证实发现乱联想 |
+
+产品侧差异：FastAPI + WebSocket 控制台、Docker 一键部署、多模型接入、会话暂停恢复与交接文档导出。
+
 ## 致谢
 
-- [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent) — 架构灵感来源（Planner-Executor-Reflector 模式）
+- [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent) — 决策循环灵感（Planner-Executor-Reflector）
+- 黑板架构 — 经典 AI 共享工作区思路
+- 打穿短表 — 渗透测试「认 A 打 B」攻击链经验（文章与实战思路）
 
 ## 许可证
 

@@ -17,7 +17,7 @@ Trocar is an autonomous penetration testing system powered by AI. Give it a URL,
 
 Five-phase "surgeon mode": **Threat Modeling → Precision Strike → Deep Reflection → Bypass → Deep Verification**
 
-Independently designed and implemented, with AI-assisted development. Architecture inspired by [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent) (Planner-Executor-Reflector pattern), extended with a five-phase pipeline and blackboard memory.
+Independently designed and implemented, with AI-assisted development. The decision loop draws on [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent)'s Planner-Executor-Reflector; blackboard memory and "see A, then hit B" attack-chain thinking draw on related articles and practice. Trocar turns those ideas into a five-phase pipeline, a pentest-specific five-partition persistent blackboard, and on-demand knowledge modules with chain-upgrade rules.
 
 <div align="center">
   <img src="Trocar.png" alt="Trocar UI" width="900">
@@ -292,9 +292,23 @@ After a test session ends, you can generate a handoff document with one click, e
 | PUT | `/api/skill` | Update Skill |
 | WS | `/ws/{id}` | WebSocket real-time push |
 
+## Inspiration & What Trocar Adds
+
+Trocar turns existing ideas into a working pentest agent; it does not claim to invent the methodology from scratch.
+
+| Inspiration | What Trocar adds |
+|---|---|
+| [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent) Planner-Executor-Reflector | Single-model **six-lens rotation** instead of multi-role / multi-model coordination; the loop is expanded into a **five-phase pipeline**: threat modeling → precision strike → deep reflection → bypass → deep verification |
+| Classic blackboard (shared workspace: many writers, one memory) | Split for pentesting into **five partitions** (attack surfaces / verified findings / pending hypotheses / exploits / failure records), **persisted in SQLite**, with a summary injected every turn; failure records stop repeated probing |
+| Breakthrough short-table ("see A, then hit B" chaining) | Compressed into **12 injectable rules**, bound to 38 feature mappings and 34 knowledge modules loaded **on demand**; chains only after the **verification iron rule** (real HTTP evidence), so unconfirmed findings do not spawn guesswork |
+
+On the product side: FastAPI + WebSocket console, one-command Docker, multi-model support, pause/resume, and handoff export.
+
 ## Acknowledgements
 
-- [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent) — Architecture inspiration (Planner-Executor-Reflector pattern)
+- [LuaN1aoAgent](https://github.com/SanMuzZzZz/LuaN1aoAgent) — Decision-loop inspiration (Planner-Executor-Reflector)
+- Blackboard architecture — Classic AI shared-workspace idea
+- Breakthrough short-table — Pentest "see A, then hit B" chaining (articles and practice)
 
 ## License
 
