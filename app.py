@@ -13,7 +13,7 @@ import engine
 import settings as cfg
 from config import HOST, PORT, SKILL_FILE
 from events import bus
-from llm import stream_text
+from llm import stream_text, THINKING_BUDGETS
 
 
 @asynccontextmanager
@@ -361,6 +361,8 @@ async def update_settings(request: Request):
     current = cfg.load()
     for k in ("provider", "model", "base_url", "max_tokens", "burp_proxy", "max_concurrent", "thinking_level"):
         if k in body:
+            if k == "thinking_level" and body[k] not in THINKING_BUDGETS and body[k] != "":
+                raise HTTPException(status_code=400, detail=f"无效的思考强度: {body[k]}")
             current[k] = body[k]
     if "api_key" in body and body["api_key"] and not body["api_key"].startswith("****"):
         current["api_key"] = body["api_key"]
@@ -382,7 +384,6 @@ async def speedtest(request: Request):
         raise HTTPException(status_code=400, detail="未指定模型")
     t0 = time.perf_counter()
     ttft = None
-    token_count = 0
     full_text = ""
     try:
         async for chunk in stream_text(
@@ -396,10 +397,10 @@ async def speedtest(request: Request):
         ):
             if ttft is None:
                 ttft = round((time.perf_counter() - t0) * 1000)
-            token_count += 1
             full_text += chunk
     except Exception as e:
         return {"ok": False, "error": str(e)[:200]}
+    token_count = max(1, len(full_text) // 4)
     total_ms = round((time.perf_counter() - t0) * 1000)
     tps = round(token_count / (total_ms / 1000), 1) if total_ms > 0 else 0
     return {

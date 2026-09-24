@@ -20,7 +20,7 @@ async def stream_chat(
     For Anthropic: handles text + tool_use content blocks.
     For OpenAI: handles content + tool_calls.
     """
-    if provider == "openai":
+    if provider != "anthropic":
         return await _chat_openai(api_key, base_url, model, max_tokens, system, messages, tools, thinking_level)
     return await _chat_anthropic(api_key, base_url, model, max_tokens, system, messages, tools, thinking_level)
 
@@ -36,7 +36,7 @@ async def stream_text(
     messages: list[dict],
 ) -> AsyncIterator[str]:
     """Stream text-only completion (no tool use). Used for legacy/fallback."""
-    if provider == "openai":
+    if provider != "anthropic":
         async for chunk in _stream_openai_text(api_key, base_url, model, max_tokens, system, messages):
             yield chunk
     else:
@@ -65,7 +65,7 @@ async def _chat_anthropic(api_key, base_url, model, max_tokens, system, messages
 
     call_kwargs = {
         "model": model,
-        "max_tokens": max(max_tokens, budget + max_tokens) if budget else max_tokens,
+        "max_tokens": budget + max_tokens if budget else max_tokens,
         "system": system,
         "messages": messages,
     }
@@ -78,25 +78,15 @@ async def _chat_anthropic(api_key, base_url, model, max_tokens, system, messages
 
     text_parts = []
     tool_calls = []
-    for block in response.content:
-        if block.type == "thinking":
-            continue
-        elif block.type == "text":
-            text_parts.append(block.text)
-        elif block.type == "tool_use":
-            tool_calls.append({
-                "id": block.id,
-                "name": block.name,
-                "input": block.input,
-            })
-
     raw_content = []
     for b in response.content:
         if b.type == "thinking":
-            raw_content.append({"type": "thinking", "thinking": b.thinking})
+            raw_content.append({"type": "thinking", "thinking": b.thinking, "signature": b.signature})
         elif b.type == "text":
+            text_parts.append(b.text)
             raw_content.append({"type": "text", "text": b.text})
         elif b.type == "tool_use":
+            tool_calls.append({"id": b.id, "name": b.name, "input": b.input})
             raw_content.append({"type": "tool_use", "id": b.id, "name": b.name, "input": b.input})
 
     return {
@@ -109,7 +99,7 @@ async def _chat_anthropic(api_key, base_url, model, max_tokens, system, messages
 
 async def _chat_openai(api_key, base_url, model, max_tokens, system, messages, use_tools, thinking_level=""):
     try:
-        from openai import AsyncOpenAI
+        from openai import AsyncOpenAI, BadRequestError as _OAIBadRequest
     except ImportError:
         raise RuntimeError("openai package not installed. Run: pip install openai")
 
@@ -143,7 +133,7 @@ async def _chat_openai(api_key, base_url, model, max_tokens, system, messages, u
 
     try:
         response = await client.chat.completions.create(**call_kwargs)
-    except Exception:
+    except _OAIBadRequest:
         if "reasoning_effort" in call_kwargs:
             call_kwargs.pop("reasoning_effort")
             response = await client.chat.completions.create(**call_kwargs)
